@@ -98,7 +98,7 @@
       <div class="half-price-bar">
         <div>
           <div class="hp-label">&#x1F4B2; Fresh Items 1/2 Price</div>
-          <div class="hp-desc">Reduces all Fresh menu items to 50% off</div>
+          <div class="hp-desc">Reduces all Fresh and Cooked menu items to 50% off</div>
         </div>
         <input class="toggle toggle-green" type="checkbox" id="halfPriceToggle" onchange="onHalfPriceToggle()" />
       </div>
@@ -140,8 +140,13 @@
 
   function isHalfPrice() { return document.getElementById('halfPriceToggle').checked; }
 
+  function isDiscounted(item) {
+    const t = item.itemType.toLowerCase();
+    return isHalfPrice() && (t === 'fresh' || t === 'cooked');
+  }
+
   function effectivePrice(item) {
-    return (isHalfPrice() && item.itemType.toLowerCase() === 'fresh') ? item.itemCost / 2 : item.itemCost;
+    return isDiscounted(item) ? item.itemCost / 2 : item.itemCost;
   }
 
   async function init() {
@@ -180,8 +185,7 @@
         <div class="type-label">${esc(type)}</div>
         ${items.map(m => {
           const ep = effectivePrice(m);
-          const isFresh = m.itemType.toLowerCase() === 'fresh';
-          const priceHtml = (isHalfPrice() && isFresh)
+          const priceHtml = isDiscounted(m)
             ? `<span class="price-orig">$${m.itemCost.toFixed(2)}</span><span class="price-half">$${ep.toFixed(2)}</span>`
             : `$${m.itemCost.toFixed(2)}`;
           return `<div class="menu-item" id="row-${m.id}">
