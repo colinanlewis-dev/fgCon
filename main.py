@@ -91,8 +91,16 @@ def get_events():
     return result.data
 
 
+@app.get("/api/events/active")
+def get_active_event():
+    result = supabase.table("event").select("*").eq("isActive", True).limit(1).execute()
+    return result.data[0] if result.data else None
+
+
 @app.post("/api/events", status_code=201)
 def create_event(event: Event):
+    if event.isActive:
+        supabase.table("event").update({"isActive": False}).eq("isActive", True).execute()
     result = supabase.table("event").insert(event.model_dump()).execute()
     return result.data[0]
 
@@ -102,6 +110,8 @@ def update_event(event_id: int, event: EventUpdate):
     updates = {k: v for k, v in event.model_dump().items() if v is not None}
     if not updates:
         raise HTTPException(status_code=400, detail="No fields to update")
+    if updates.get("isActive") is True:
+        supabase.table("event").update({"isActive": False}).eq("isActive", True).execute()
     result = supabase.table("event").update(updates).eq("id", event_id).execute()
     if not result.data:
         raise HTTPException(status_code=404, detail="Event not found")

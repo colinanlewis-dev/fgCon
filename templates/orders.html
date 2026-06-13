@@ -16,8 +16,10 @@
     .card { background: white; border-radius: 10px; padding: 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 1.5rem; }
     .card h2 { font-size: .75rem; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 1rem; }
 
-    select, input { padding: .55rem .75rem; border: 1px solid #ddd; border-radius: 6px; font-size: .95rem; width: 100%; }
-    select:focus, input:focus { outline: 2px solid #4f46e5; border-color: transparent; }
+    .event-banner { background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 8px; padding: .75rem 1rem; display: flex; align-items: center; justify-content: space-between; }
+    .event-banner .ev-name { font-weight: 600; font-size: .95rem; }
+    .event-banner .ev-date { font-size: .8rem; color: #666; }
+    .no-event { text-align: center; color: #aaa; padding: 3rem 1rem; font-size: .95rem; }
 
     /* Menu items */
     .type-group { margin-bottom: 1.2rem; }
@@ -68,11 +70,9 @@
 </header>
 
 <div style="max-width:960px;margin:1.5rem auto;padding:0 1rem">
-  <div class="card" style="margin-bottom:0">
+  <div class="card" style="margin-bottom:0" id="eventBannerCard">
     <h2>Active Event</h2>
-    <select id="eventSelect" onchange="onEventChange()">
-      <option value="">-- Select an active event --</option>
-    </select>
+    <div id="eventBanner"></div>
   </div>
 </div>
 
@@ -103,29 +103,24 @@
 <div id="toast"></div>
 
 <script>
-  let cart = {}; // menuItemId -> { name, price, qty }
+  let cart = {};
   let menuData = [];
   let selectedEventId = null;
 
   async function init() {
-    const res = await fetch('/api/events');
-    const events = await res.json();
-    const active = events.filter(e => e.isActive);
-    const sel = document.getElementById('eventSelect');
-    active.forEach(e => {
-      const opt = document.createElement('option');
-      opt.value = e.id;
-      opt.textContent = `${e.eventName || 'Unnamed'} — ${formatDate(e.eventDate)}`;
-      sel.appendChild(opt);
-    });
-    if (active.length === 1) { sel.value = active[0].id; onEventChange(); }
-  }
-
-  async function onEventChange() {
-    selectedEventId = document.getElementById('eventSelect').value;
-    if (!selectedEventId) { document.getElementById('mainContent').style.display = 'none'; return; }
+    const res = await fetch('/api/events/active');
+    const event = await res.json();
+    const banner = document.getElementById('eventBanner');
+    if (!event) {
+      banner.innerHTML = '<p class="no-event">No active event. Set one active in Event Manager.</p>';
+      return;
+    }
+    selectedEventId = event.id;
+    banner.innerHTML = `<div class="event-banner">
+      <span class="ev-name">${esc(event.eventName || 'Unnamed Event')}</span>
+      <span class="ev-date">${formatDate(event.eventDate)}${event.eventSize ? ' &mdash; ' + esc(event.eventSize) + ' guests' : ''}</span>
+    </div>`;
     document.getElementById('mainContent').style.display = '';
-    cart = {};
     await Promise.all([loadMenu(), loadOrders()]);
     renderCart();
   }
