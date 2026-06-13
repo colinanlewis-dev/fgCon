@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Event Manager</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #f5f5f5; color: #222; }
+    header { background: #1a1a2e; color: white; padding: 1.2rem 2rem; }
+    header a { color: #a5b4fc; font-size: .85rem; text-decoration: none; display: block; margin-bottom: .4rem; }
+    header h1 { font-size: 1.4rem; font-weight: 600; }
+    .container { max-width: 860px; margin: 2rem auto; padding: 0 1rem; }
+
+    .card { background: white; border-radius: 10px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .card h2 { font-size: .75rem; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 1rem; }
+
+    form { display: grid; grid-template-columns: 1fr 1fr 1fr auto auto; gap: .75rem; align-items: end; }
+    label { display: flex; flex-direction: column; gap: .3rem; font-size: .8rem; font-weight: 500; color: #555; }
+    input, select { padding: .55rem .75rem; border: 1px solid #ddd; border-radius: 6px; font-size: .95rem; width: 100%; }
+    input:focus, select:focus { outline: 2px solid #4f46e5; border-color: transparent; }
+    button { padding: .55rem 1.2rem; border: none; border-radius: 6px; font-size: .9rem; font-weight: 600; cursor: pointer; white-space: nowrap; }
+    .btn-add    { background: #4f46e5; color: white; }
+    .btn-add:hover { background: #4338ca; }
+    .btn-save   { background: #059669; color: white; }
+    .btn-save:hover { background: #047857; }
+    .btn-cancel { background: #e5e7eb; color: #374151; }
+    .btn-del    { background: transparent; color: #dc2626; border: 1px solid #fca5a5; font-size: .8rem; padding: .35rem .7rem; }
+    .btn-del:hover { background: #fef2f2; }
+    .btn-edit   { background: transparent; color: #4f46e5; border: 1px solid #a5b4fc; font-size: .8rem; padding: .35rem .7rem; }
+    .btn-edit:hover { background: #eef2ff; }
+
+    .toggle-label { display: flex; flex-direction: column; gap: .3rem; font-size: .8rem; font-weight: 500; color: #555; }
+    .toggle-wrap { display: flex; align-items: center; gap: .5rem; padding: .55rem 0; }
+    .toggle { appearance: none; width: 36px; height: 20px; background: #ddd; border-radius: 99px; cursor: pointer; transition: background .2s; position: relative; flex-shrink: 0; }
+    .toggle:checked { background: #4f46e5; }
+    .toggle::after { content: ''; position: absolute; width: 14px; height: 14px; background: white; border-radius: 50%; top: 3px; left: 3px; transition: left .2s; }
+    .toggle:checked::after { left: 19px; }
+
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; font-size: .75rem; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: .05em; padding: .5rem .75rem; border-bottom: 2px solid #f0f0f0; }
+    td { padding: .7rem .75rem; border-bottom: 1px solid #f5f5f5; font-size: .92rem; vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafafa; }
+    .actions { display: flex; gap: .4rem; }
+    .badge { display: inline-block; padding: .2rem .6rem; border-radius: 99px; font-size: .75rem; font-weight: 600; }
+    .badge-active   { background: #ecfdf5; color: #059669; }
+    .badge-inactive { background: #fef2f2; color: #dc2626; }
+    .empty { text-align: center; color: #aaa; padding: 2rem; font-size: .9rem; }
+
+    #toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: #1a1a2e; color: white; padding: .7rem 1.2rem; border-radius: 8px; font-size: .85rem; opacity: 0; transition: opacity .3s; pointer-events: none; }
+    #toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+<header>
+  <a href="/">&#8592; Home</a>
+  <h1>Event Manager</h1>
+</header>
+
+<div class="container">
+  <!-- Add form -->
+  <div class="card">
+    <h2>Add Event</h2>
+    <form id="addForm">
+      <label>Name <input id="addName" placeholder="e.g. Summer Gala" /></label>
+      <label>Date <input id="addDate" type="date" required /></label>
+      <label>Size <input id="addSize" placeholder="e.g. 50" /></label>
+      <label class="toggle-label">Active
+        <div class="toggle-wrap"><input class="toggle" id="addActive" type="checkbox" checked /></div>
+      </label>
+      <button type="submit" class="btn-add">+ Add</button>
+    </form>
+  </div>
+
+  <!-- Edit form -->
+  <div class="card" id="editCard" style="display:none">
+    <h2>Edit Event</h2>
+    <form id="editForm">
+      <label>Name <input id="editName" /></label>
+      <label>Date <input id="editDate" type="date" required /></label>
+      <label>Size <input id="editSize" /></label>
+      <label class="toggle-label">Active
+        <div class="toggle-wrap"><input class="toggle" id="editActive" type="checkbox" /></div>
+      </label>
+      <div style="display:flex;gap:.5rem">
+        <button type="submit" class="btn-save">Save</button>
+        <button type="button" class="btn-cancel" onclick="cancelEdit()">Cancel</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Table -->
+  <div class="card">
+    <h2>Events</h2>
+    <table>
+      <thead>
+        <tr><th>Name</th><th>Date</th><th>Size</th><th>Status</th><th></th></tr>
+      </thead>
+      <tbody id="eventsBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  let editingId = null;
+
+  async function load() {
+    const res = await fetch('/api/events');
+    const events = await res.json();
+    const tbody = document.getElementById('eventsBody');
+    if (!events.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty">No events yet &mdash; add one above.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = events.map(ev => `
+      <tr>
+        <td>${esc(ev.eventName || '&mdash;')}</td>
+        <td>${formatDate(ev.eventDate)}</td>
+        <td>${esc(ev.eventSize || '&mdash;')}</td>
+        <td><span class="badge ${ev.isActive ? 'badge-active' : 'badge-inactive'}">${ev.isActive ? 'Active' : 'Inactive'}</span></td>
+        <td><div class="actions">
+          <button class="btn-edit" onclick="startEdit(${ev.id}, '${esc(ev.eventName || '')}', '${ev.eventDate}', '${esc(ev.eventSize || '')}', ${ev.isActive})">Edit</button>
+          <button class="btn-del" onclick="deleteEvent(${ev.id})">Delete</button>
+        </div></td>
+      </tr>`).join('');
+  }
+
+  document.getElementById('addForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    await fetch('/api/events', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        eventName: document.getElementById('addName').value || null,
+        eventDate: document.getElementById('addDate').value,
+        eventSize: document.getElementById('addSize').value || null,
+        isActive: document.getElementById('addActive').checked,
+      })
+    });
+    e.target.reset();
+    document.getElementById('addActive').checked = true;
+    toast('Event added');
+    load();
+  });
+
+  function startEdit(id, name, date, size, active) {
+    editingId = id;
+    document.getElementById('editName').value = name;
+    document.getElementById('editDate').value = date;
+    document.getElementById('editSize').value = size;
+    document.getElementById('editActive').checked = active;
+    document.getElementById('editCard').style.display = '';
+    document.getElementById('editCard').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function cancelEdit() {
+    editingId = null;
+    document.getElementById('editCard').style.display = 'none';
+  }
+
+  document.getElementById('editForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    await fetch(`/api/events/${editingId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        eventName: document.getElementById('editName').value || null,
+        eventDate: document.getElementById('editDate').value,
+        eventSize: document.getElementById('editSize').value || null,
+        isActive: document.getElementById('editActive').checked,
+      })
+    });
+    cancelEdit();
+    toast('Event updated');
+    load();
+  });
+
+  async function deleteEvent(id) {
+    if (!confirm('Delete this event?')) return;
+    await fetch(`/api/events/${id}`, { method: 'DELETE' });
+    toast('Event deleted');
+    load();
+  }
+
+  function formatDate(d) {
+    if (!d) return '&mdash;';
+    const [y, m, day] = d.split('-');
+    return `${m}/${day}/${y}`;
+  }
+
+  function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  load();
+</script>
+</body>
+</html>
