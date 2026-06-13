@@ -120,7 +120,13 @@ def update_event(event_id: int, event: EventUpdate):
 
 @app.delete("/api/events/{event_id}", status_code=204)
 def delete_event(event_id: int):
-    result = supabase.table("event").delete().eq("id", event_id).execute()
+    from postgrest.exceptions import APIError
+    try:
+        result = supabase.table("event").delete().eq("id", event_id).execute()
+    except APIError as e:
+        if e.code == "23503":
+            raise HTTPException(status_code=409, detail="This event has orders and cannot be deleted.")
+        raise
     if not result.data:
         raise HTTPException(status_code=404, detail="Event not found")
 

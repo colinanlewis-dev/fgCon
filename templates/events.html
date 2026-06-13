@@ -48,8 +48,9 @@
     .badge-inactive { background: #fef2f2; color: #dc2626; }
     .empty { text-align: center; color: #aaa; padding: 2rem; font-size: .9rem; }
 
-    #toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: #1a1a2e; color: white; padding: .7rem 1.2rem; border-radius: 8px; font-size: .85rem; opacity: 0; transition: opacity .3s; pointer-events: none; }
+    #toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: #1a1a2e; color: white; padding: .7rem 1.2rem; border-radius: 8px; font-size: .85rem; opacity: 0; transition: opacity .3s; pointer-events: none; max-width: 320px; }
     #toast.show { opacity: 1; }
+    #toast.warn { background: #dc2626; }
   </style>
 </head>
 <body>
@@ -180,7 +181,12 @@
 
   async function deleteEvent(id) {
     if (!confirm('Delete this event?')) return;
-    await fetch(`/api/events/${id}`, { method: 'DELETE' });
+    const res = await fetch(`/api/events/${id}`, { method: 'DELETE' });
+    if (res.status === 409) {
+      const body = await res.json();
+      toast(body.detail, true);
+      return;
+    }
     toast('Event deleted');
     load();
   }
@@ -193,11 +199,12 @@
 
   function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
-  function toast(msg) {
+  function toast(msg, warn = false) {
     const t = document.getElementById('toast');
     t.textContent = msg;
+    t.classList.toggle('warn', warn);
     t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2500);
+    setTimeout(() => { t.classList.remove('show'); t.classList.remove('warn'); }, warn ? 4000 : 2500);
   }
 
   load();
