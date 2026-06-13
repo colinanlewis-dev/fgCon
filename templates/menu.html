@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Menu Manager</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #f5f5f5; color: #222; }
+    header { background: #1a1a2e; color: white; padding: 1.2rem 2rem; }
+    header h1 { font-size: 1.4rem; font-weight: 600; }
+    .container { max-width: 860px; margin: 2rem auto; padding: 0 1rem; }
+
+    .card { background: white; border-radius: 10px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .card h2 { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; color: #444; text-transform: uppercase; letter-spacing: .05em; }
+
+    form { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: .75rem; align-items: end; }
+    label { display: flex; flex-direction: column; gap: .3rem; font-size: .8rem; font-weight: 500; color: #555; }
+    input, select { padding: .55rem .75rem; border: 1px solid #ddd; border-radius: 6px; font-size: .95rem; width: 100%; }
+    input:focus, select:focus { outline: 2px solid #4f46e5; border-color: transparent; }
+    button { padding: .55rem 1.2rem; border: none; border-radius: 6px; font-size: .9rem; font-weight: 600; cursor: pointer; white-space: nowrap; }
+    .btn-add  { background: #4f46e5; color: white; }
+    .btn-add:hover { background: #4338ca; }
+    .btn-save { background: #059669; color: white; }
+    .btn-save:hover { background: #047857; }
+    .btn-cancel { background: #e5e7eb; color: #374151; }
+    .btn-del  { background: transparent; color: #dc2626; border: 1px solid #fca5a5; font-size: .8rem; padding: .35rem .7rem; }
+    .btn-del:hover { background: #fef2f2; }
+    .btn-edit { background: transparent; color: #4f46e5; border: 1px solid #a5b4fc; font-size: .8rem; padding: .35rem .7rem; }
+    .btn-edit:hover { background: #eef2ff; }
+
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; font-size: .75rem; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: .05em; padding: .5rem .75rem; border-bottom: 2px solid #f0f0f0; }
+    td { padding: .7rem .75rem; border-bottom: 1px solid #f5f5f5; font-size: .92rem; vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafafa; }
+    .actions { display: flex; gap: .4rem; }
+    .badge { display: inline-block; padding: .2rem .6rem; border-radius: 99px; font-size: .75rem; font-weight: 600; background: #e0e7ff; color: #3730a3; }
+    .empty { text-align: center; color: #aaa; padding: 2rem; font-size: .9rem; }
+
+    #toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: #1a1a2e; color: white; padding: .7rem 1.2rem; border-radius: 8px; font-size: .85rem; opacity: 0; transition: opacity .3s; pointer-events: none; }
+    #toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+<header><h1>Menu Manager</h1></header>
+
+<div class="container">
+  <!-- Add form -->
+  <div class="card">
+    <h2>Add Item</h2>
+    <form id="addForm">
+      <label>Name <input id="addName" placeholder="e.g. Margherita" required /></label>
+      <label>Cost ($) <input id="addCost" type="number" min="0" placeholder="12" required /></label>
+      <label>Type
+        <input id="addType" placeholder="e.g. Pizza" required />
+      </label>
+      <button type="submit" class="btn-add">+ Add</button>
+    </form>
+  </div>
+
+  <!-- Edit form (hidden until editing) -->
+  <div class="card" id="editCard" style="display:none">
+    <h2>Edit Item</h2>
+    <form id="editForm">
+      <label>Name <input id="editName" required /></label>
+      <label>Cost ($) <input id="editCost" type="number" min="0" required /></label>
+      <label>Type <input id="editType" required /></label>
+      <div style="display:flex;gap:.5rem">
+        <button type="submit" class="btn-save">Save</button>
+        <button type="button" class="btn-cancel" onclick="cancelEdit()">Cancel</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Table -->
+  <div class="card">
+    <h2>Menu Items</h2>
+    <table>
+      <thead>
+        <tr><th>Name</th><th>Type</th><th>Cost</th><th></th></tr>
+      </thead>
+      <tbody id="menuBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  let editingId = null;
+
+  async function load() {
+    const res = await fetch('/api/menu');
+    const items = await res.json();
+    const tbody = document.getElementById('menuBody');
+    if (!items.length) {
+      tbody.innerHTML = '<tr><td colspan="4" class="empty">No items yet &mdash; add one above.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = items.map(item => `
+      <tr>
+        <td>${esc(item.itemName)}</td>
+        <td><span class="badge">${esc(item.itemType)}</span></td>
+        <td>$${item.itemCost}</td>
+        <td><div class="actions">
+          <button class="btn-edit" onclick="startEdit(${item.id}, '${esc(item.itemName)}', ${item.itemCost}, '${esc(item.itemType)}')">Edit</button>
+          <button class="btn-del" onclick="deleteItem(${item.id})">Delete</button>
+        </div></td>
+      </tr>`).join('');
+  }
+
+  document.getElementById('addForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    await fetch('/api/menu', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        itemName: document.getElementById('addName').value,
+        itemCost: parseInt(document.getElementById('addCost').value),
+        itemType: document.getElementById('addType').value,
+      })
+    });
+    e.target.reset();
+    toast('Item added');
+    load();
+  });
+
+  function startEdit(id, name, cost, type) {
+    editingId = id;
+    document.getElementById('editName').value = name;
+    document.getElementById('editCost').value = cost;
+    document.getElementById('editType').value = type;
+    document.getElementById('editCard').style.display = '';
+    document.getElementById('editCard').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function cancelEdit() {
+    editingId = null;
+    document.getElementById('editCard').style.display = 'none';
+  }
+
+  document.getElementById('editForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    await fetch(`/api/menu/${editingId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        itemName: document.getElementById('editName').value,
+        itemCost: parseInt(document.getElementById('editCost').value),
+        itemType: document.getElementById('editType').value,
+      })
+    });
+    cancelEdit();
+    toast('Item updated');
+    load();
+  });
+
+  async function deleteItem(id) {
+    if (!confirm('Delete this item?')) return;
+    await fetch(`/api/menu/${id}`, { method: 'DELETE' });
+    toast('Item deleted');
+    load();
+  }
+
+  function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  load();
+</script>
+</body>
+</html>
