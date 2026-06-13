@@ -51,7 +51,7 @@
     <h2>Add Item</h2>
     <form id="addForm">
       <label>Name <input id="addName" placeholder="e.g. Margherita" required /></label>
-      <label>Cost ($) <input id="addCost" type="number" min="0" placeholder="12" required /></label>
+      <label>Cost ($) <input id="addCost" type="number" min="0" step="0.01" placeholder="12.99" required /></label>
       <label>Type
         <input id="addType" placeholder="e.g. Pizza" required />
       </label>
@@ -64,7 +64,7 @@
     <h2>Edit Item</h2>
     <form id="editForm">
       <label>Name <input id="editName" required /></label>
-      <label>Cost ($) <input id="editCost" type="number" min="0" required /></label>
+      <label>Cost ($) <input id="editCost" type="number" min="0" step="0.01" required /></label>
       <label>Type <input id="editType" required /></label>
       <div style="display:flex;gap:.5rem">
         <button type="submit" class="btn-save">Save</button>
@@ -102,9 +102,9 @@
       <tr>
         <td>${esc(item.itemName)}</td>
         <td><span class="badge">${esc(item.itemType)}</span></td>
-        <td>$${item.itemCost}</td>
+        <td>$${(item.itemCost / 100).toFixed(2)}</td>
         <td><div class="actions">
-          <button class="btn-edit" onclick="startEdit(${item.id}, '${esc(item.itemName)}', ${item.itemCost}, '${esc(item.itemType)}')">Edit</button>
+          <button class="btn-edit" onclick="startEdit(${item.id}, '${esc(item.itemName)}', ${item.itemCost / 100}, '${esc(item.itemType)}')">Edit</button>
           <button class="btn-del" onclick="deleteItem(${item.id})">Delete</button>
         </div></td>
       </tr>`).join('');
@@ -117,7 +117,7 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         itemName: document.getElementById('addName').value,
-        itemCost: parseInt(document.getElementById('addCost').value),
+        itemCost: Math.round(parseFloat(document.getElementById('addCost').value) * 100),
         itemType: document.getElementById('addType').value,
       })
     });
