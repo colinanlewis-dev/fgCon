@@ -247,7 +247,7 @@
   function autoApplyCombo() {
     const mains  = cartItemsByType('Cooked', 'Fresh');
     const drinks = cartItemsByType('Drink');
-    const sides  = cartItemsByType('Side');
+    const sides  = cartItemsByType('Side', 'Fresh');
     if (!mains.length || !drinks.length || !sides.length || !comboData.length) {
       activeCombo = null;
       return;
