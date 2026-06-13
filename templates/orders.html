@@ -53,6 +53,12 @@
     .vip-note-wrap { display: none; }
     .vip-note-wrap input { font-size: .85rem; padding: .4rem .6rem; border-color: #fde68a; }
     .badge-vip { background: #fef3c7; color: #92400e; display: inline-block; padding: .15rem .5rem; border-radius: 99px; font-size: .72rem; font-weight: 700; margin-left: .4rem; }
+    .half-price-bar { display: flex; align-items: center; justify-content: space-between; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: .65rem .85rem; margin-bottom: 1rem; }
+    .half-price-bar .hp-label { font-size: .85rem; font-weight: 600; color: #166534; display: flex; align-items: center; gap: .5rem; }
+    .half-price-bar .hp-desc { font-size: .75rem; color: #4ade80; margin-top: .1rem; }
+    .toggle-green:checked { background: #16a34a; }
+    .price-half { color: #16a34a; font-weight: 600; }
+    .price-orig { color: #bbb; text-decoration: line-through; margin-right: .25rem; }
 
     /* Orders list */
     .order-card { border: 1px solid #f0f0f0; border-radius: 8px; padding: 1rem; margin-bottom: .75rem; }
@@ -89,6 +95,13 @@
   <!-- Left: menu + past orders -->
   <div>
     <div class="card">
+      <div class="half-price-bar">
+        <div>
+          <div class="hp-label">&#x1F4B2; Fresh Items 1/2 Price</div>
+          <div class="hp-desc">Reduces all Fresh menu items to 50% off</div>
+        </div>
+        <input class="toggle toggle-green" type="checkbox" id="halfPriceToggle" onchange="onHalfPriceToggle()" />
+      </div>
       <h2>Menu</h2>
       <div id="menuItems"></div>
     </div>
@@ -125,6 +138,12 @@
   let menuData = [];
   let selectedEventId = null;
 
+  function isHalfPrice() { return document.getElementById('halfPriceToggle').checked; }
+
+  function effectivePrice(item) {
+    return (isHalfPrice() && item.itemType.toLowerCase() === 'fresh') ? item.itemCost / 2 : item.itemCost;
+  }
+
   async function init() {
     const res = await fetch('/api/events/active');
     const event = await res.json();
@@ -148,22 +167,45 @@
     menuData = (await res.json()).filter(m => m.isAvailable);
     const groups = {};
     menuData.forEach(m => { (groups[m.itemType] = groups[m.itemType] || []).push(m); });
+    renderMenuPrices(groups);
+  }
+
+  function renderMenuPrices(groups) {
+    if (!groups) {
+      groups = {};
+      menuData.forEach(m => { (groups[m.itemType] = groups[m.itemType] || []).push(m); });
+    }
     document.getElementById('menuItems').innerHTML = Object.entries(groups).map(([type, items]) => `
       <div class="type-group">
         <div class="type-label">${esc(type)}</div>
-        ${items.map(m => `
-          <div class="menu-item" id="row-${m.id}">
+        ${items.map(m => {
+          const ep = effectivePrice(m);
+          const isFresh = m.itemType.toLowerCase() === 'fresh';
+          const priceHtml = (isHalfPrice() && isFresh)
+            ? `<span class="price-orig">$${m.itemCost.toFixed(2)}</span><span class="price-half">$${ep.toFixed(2)}</span>`
+            : `$${m.itemCost.toFixed(2)}`;
+          return `<div class="menu-item" id="row-${m.id}">
             <div class="info">
               <div class="name">${esc(m.itemName)}</div>
-              <div class="price">$${m.itemCost.toFixed(2)}</div>
+              <div class="price" id="price-${m.id}">${priceHtml}</div>
             </div>
             <div class="qty-ctrl">
               <button class="qty-btn" onclick="adjustQty(${m.id}, -1)">&#8722;</button>
-              <span class="qty-num" id="qty-${m.id}">0</span>
+              <span class="qty-num" id="qty-${m.id}">${cart[m.id] ? cart[m.id].qty : 0}</span>
               <button class="qty-btn" onclick="adjustQty(${m.id}, 1)">+</button>
             </div>
-          </div>`).join('')}
+          </div>`;
+        }).join('')}
       </div>`).join('');
+  }
+
+  function onHalfPriceToggle() {
+    // Re-price any Fresh items already in the cart
+    menuData.forEach(m => {
+      if (cart[m.id]) cart[m.id].price = effectivePrice(m);
+    });
+    renderMenuPrices();
+    renderCart();
   }
 
   function adjustQty(id, delta) {
@@ -172,7 +214,7 @@
     const current = cart[id] ? cart[id].qty : 0;
     const next = Math.max(0, current + delta);
     if (next === 0) { delete cart[id]; }
-    else { cart[id] = { name: item.itemName, price: item.itemCost, qty: next }; }
+    else { cart[id] = { name: item.itemName, price: effectivePrice(item), qty: next, type: item.itemType }; }
     document.getElementById('qty-' + id).textContent = next;
     renderCart();
   }
