@@ -14,7 +14,15 @@
     .card { background: white; border-radius: 10px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
     .card h2 { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; color: #444; text-transform: uppercase; letter-spacing: .05em; }
 
-    form { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: .75rem; align-items: end; }
+    form { display: grid; grid-template-columns: 1fr 1fr 1fr auto auto; gap: .75rem; align-items: end; }
+    .toggle-label { display: flex; flex-direction: column; gap: .3rem; font-size: .8rem; font-weight: 500; color: #555; }
+    .toggle-wrap { display: flex; align-items: center; gap: .5rem; padding: .55rem 0; }
+    .toggle { appearance: none; width: 36px; height: 20px; background: #ddd; border-radius: 99px; cursor: pointer; transition: background .2s; position: relative; flex-shrink: 0; }
+    .toggle:checked { background: #4f46e5; }
+    .toggle::after { content: ''; position: absolute; width: 14px; height: 14px; background: white; border-radius: 50%; top: 3px; left: 3px; transition: left .2s; }
+    .toggle:checked::after { left: 19px; }
+    .badge-unavail { background: #fef2f2; color: #dc2626; }
+    .badge-avail { background: #ecfdf5; color: #059669; }
     label { display: flex; flex-direction: column; gap: .3rem; font-size: .8rem; font-weight: 500; color: #555; }
     input, select { padding: .55rem .75rem; border: 1px solid #ddd; border-radius: 6px; font-size: .95rem; width: 100%; }
     input:focus, select:focus { outline: 2px solid #4f46e5; border-color: transparent; }
@@ -55,8 +63,9 @@
     <form id="addForm">
       <label>Name <input id="addName" placeholder="e.g. Margherita" required /></label>
       <label>Cost ($) <input id="addCost" type="number" min="0" step="0.01" placeholder="12.99" required /></label>
-      <label>Type
-        <input id="addType" placeholder="e.g. Pizza" required />
+      <label>Type <input id="addType" placeholder="e.g. Pizza" required /></label>
+      <label class="toggle-label">Available
+        <div class="toggle-wrap"><input class="toggle" id="addAvailable" type="checkbox" checked /></div>
       </label>
       <button type="submit" class="btn-add">+ Add</button>
     </form>
@@ -69,6 +78,9 @@
       <label>Name <input id="editName" required /></label>
       <label>Cost ($) <input id="editCost" type="number" min="0" step="0.01" required /></label>
       <label>Type <input id="editType" required /></label>
+      <label class="toggle-label">Available
+        <div class="toggle-wrap"><input class="toggle" id="editAvailable" type="checkbox" /></div>
+      </label>
       <div style="display:flex;gap:.5rem">
         <button type="submit" class="btn-save">Save</button>
         <button type="button" class="btn-cancel" onclick="cancelEdit()">Cancel</button>
@@ -81,7 +93,7 @@
     <h2>Menu Items</h2>
     <table>
       <thead>
-        <tr><th>Name</th><th>Type</th><th>Cost</th><th></th></tr>
+        <tr><th>Name</th><th>Type</th><th>Cost</th><th>Available</th><th></th></tr>
       </thead>
       <tbody id="menuBody"></tbody>
     </table>
@@ -106,8 +118,9 @@
         <td>${esc(item.itemName)}</td>
         <td><span class="badge">${esc(item.itemType)}</span></td>
         <td>$${item.itemCost.toFixed(2)}</td>
+        <td><span class="badge ${item.isAvailable ? 'badge-avail' : 'badge-unavail'}">${item.isAvailable ? 'Yes' : 'No'}</span></td>
         <td><div class="actions">
-          <button class="btn-edit" onclick="startEdit(${item.id}, '${esc(item.itemName)}', ${item.itemCost}, '${esc(item.itemType)}')">Edit</button>
+          <button class="btn-edit" onclick="startEdit(${item.id}, '${esc(item.itemName)}', ${item.itemCost}, '${esc(item.itemType)}', ${item.isAvailable})">Edit</button>
           <button class="btn-del" onclick="deleteItem(${item.id})">Delete</button>
         </div></td>
       </tr>`).join('');
@@ -122,6 +135,7 @@
         itemName: document.getElementById('addName').value,
         itemCost: parseFloat(document.getElementById('addCost').value),
         itemType: document.getElementById('addType').value,
+        isAvailable: document.getElementById('addAvailable').checked,
       })
     });
     e.target.reset();
@@ -129,11 +143,12 @@
     load();
   });
 
-  function startEdit(id, name, cost, type) {
+  function startEdit(id, name, cost, type, available) {
     editingId = id;
     document.getElementById('editName').value = name;
     document.getElementById('editCost').value = cost;
     document.getElementById('editType').value = type;
+    document.getElementById('editAvailable').checked = available;
     document.getElementById('editCard').style.display = '';
     document.getElementById('editCard').scrollIntoView({ behavior: 'smooth' });
   }
@@ -152,6 +167,7 @@
         itemName: document.getElementById('editName').value,
         itemCost: parseFloat(document.getElementById('editCost').value),
         itemType: document.getElementById('editType').value,
+        isAvailable: document.getElementById('editAvailable').checked,
       })
     });
     cancelEdit();

@@ -12,12 +12,14 @@ class MenuItem(BaseModel):
     itemName: str
     itemCost: float
     itemType: str
+    isAvailable: bool = True
 
 
 class MenuItemUpdate(BaseModel):
     itemName: Optional[str] = None
-    itemCost: Optional[int] = None
+    itemCost: Optional[float] = None
     itemType: Optional[str] = None
+    isAvailable: Optional[bool] = None
 
 
 @app.get("/", response_class=HTMLResponse)
