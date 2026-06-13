@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fgCon</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #f5f5f5; color: #222; }
+    header { background: #1a1a2e; color: white; padding: 1.2rem 2rem; }
+    header h1 { font-size: 1.4rem; font-weight: 600; }
+    .container { max-width: 860px; margin: 2rem auto; padding: 0 1rem; }
+    h2 { font-size: .75rem; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 1rem; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }
+    .card {
+      background: white;
+      border-radius: 10px;
+      padding: 1.5rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      gap: .5rem;
+      transition: box-shadow .15s, transform .15s;
+    }
+    .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.12); transform: translateY(-2px); }
+    .card .icon { font-size: 1.8rem; }
+    .card .title { font-weight: 600; font-size: 1rem; }
+    .card .desc { font-size: .85rem; color: #777; }
+  </style>
+</head>
+<body>
+<header><h1>fgCon</h1></header>
+
+<div class="container">
+  <h2>Management</h2>
+  <div class="grid">
+    <a class="card" href="/menu">
+      <span class="icon">&#x1F37D;</span>
+      <span class="title">Menu Manager</span>
+      <span class="desc">Add, edit, and remove menu items</span>
+    </a>
+  </div>
+</div>
+</body>
+</html>
