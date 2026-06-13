@@ -44,6 +44,15 @@
     .btn-place { width: 100%; padding: .7rem; background: #4f46e5; color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; }
     .btn-place:hover { background: #4338ca; }
     .btn-place:disabled { background: #c7c7d9; cursor: not-allowed; }
+    .vip-section { margin-bottom: 1rem; padding: .75rem; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; display: flex; flex-direction: column; gap: .5rem; }
+    .vip-row { display: flex; align-items: center; gap: .6rem; font-size: .88rem; font-weight: 600; color: #92400e; }
+    .toggle { appearance: none; width: 36px; height: 20px; background: #ddd; border-radius: 99px; cursor: pointer; transition: background .2s; position: relative; flex-shrink: 0; }
+    .toggle:checked { background: #d97706; }
+    .toggle::after { content: ''; position: absolute; width: 14px; height: 14px; background: white; border-radius: 50%; top: 3px; left: 3px; transition: left .2s; }
+    .toggle:checked::after { left: 19px; }
+    .vip-note-wrap { display: none; }
+    .vip-note-wrap input { font-size: .85rem; padding: .4rem .6rem; border-color: #fde68a; }
+    .badge-vip { background: #fef3c7; color: #92400e; display: inline-block; padding: .15rem .5rem; border-radius: 99px; font-size: .72rem; font-weight: 700; margin-left: .4rem; }
 
     /* Orders list */
     .order-card { border: 1px solid #f0f0f0; border-radius: 8px; padding: 1rem; margin-bottom: .75rem; }
@@ -95,6 +104,15 @@
       <h2>Current Order</h2>
       <div class="cart-items" id="cartItems"><p class="cart-empty">No items added yet.</p></div>
       <div class="cart-total"><span>Total</span><span id="cartTotal">$0.00</span></div>
+      <div class="vip-section">
+        <div class="vip-row">
+          <input class="toggle" type="checkbox" id="vipToggle" onchange="onVipToggle()" />
+          <label for="vipToggle">VIP Order (complimentary)</label>
+        </div>
+        <div class="vip-note-wrap" id="vipNoteWrap">
+          <input type="text" id="vipNote" placeholder="VIP name or note (optional)" />
+        </div>
+      </div>
       <button class="btn-place" id="placeBtn" onclick="placeOrder()" disabled>Place Order</button>
     </div>
   </div>
@@ -159,6 +177,13 @@
     renderCart();
   }
 
+  function isVip() { return document.getElementById('vipToggle').checked; }
+
+  function onVipToggle() {
+    document.getElementById('vipNoteWrap').style.display = isVip() ? 'block' : 'none';
+    renderCart();
+  }
+
   function renderCart() {
     const entries = Object.entries(cart);
     const cartEl = document.getElementById('cartItems');
@@ -168,22 +193,24 @@
       document.getElementById('placeBtn').disabled = true;
       return;
     }
+    const vip = isVip();
     let total = 0;
     cartEl.innerHTML = entries.map(([id, item]) => {
       const line = item.price * item.qty;
-      total += line;
+      if (!vip) total += line;
       return `<div class="cart-row">
         <span>${esc(item.name)} x${item.qty}</span>
-        <span>$${line.toFixed(2)}</span>
+        <span>${vip ? '<s style="color:#bbb">$' + line.toFixed(2) + '</s> $0.00' : '$' + line.toFixed(2)}</span>
       </div>`;
     }).join('');
-    document.getElementById('cartTotal').textContent = '$' + total.toFixed(2);
+    document.getElementById('cartTotal').textContent = vip ? '$0.00 (VIP)' : '$' + total.toFixed(2);
     document.getElementById('placeBtn').disabled = false;
   }
 
   async function placeOrder() {
     if (!selectedEventId || !Object.keys(cart).length) return;
     document.getElementById('placeBtn').disabled = true;
+    const vip = isVip();
     const items = Object.entries(cart).map(([id, item]) => ({
       menuItemId: parseInt(id),
       quantity: item.qty,
@@ -192,13 +219,21 @@
     await fetch('/api/orders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ eventId: parseInt(selectedEventId), items }),
+      body: JSON.stringify({
+        eventId: parseInt(selectedEventId),
+        items,
+        isVIP: vip,
+        vipNote: vip ? (document.getElementById('vipNote').value || null) : null,
+      }),
     });
     cart = {};
     menuData.forEach(m => { const el = document.getElementById('qty-' + m.id); if (el) el.textContent = '0'; });
+    document.getElementById('vipToggle').checked = false;
+    document.getElementById('vipNote').value = '';
+    document.getElementById('vipNoteWrap').style.display = 'none';
     renderCart();
     await loadOrders();
-    toast('Order placed!');
+    toast(vip ? 'VIP order placed!' : 'Order placed!');
   }
 
   async function loadOrders() {
@@ -210,7 +245,7 @@
       const total = o.items.reduce((s, i) => s + i.priceAtTime * i.quantity, 0);
       return `<div class="order-card">
         <div class="order-header">
-          <span class="order-id">Order #${o.id}</span>
+          <span class="order-id">Order #${o.id}${o.isVIP ? '<span class="badge-vip">&#x2B50; VIP' + (o.vipNote ? ' &mdash; ' + esc(o.vipNote) : '') + '</span>' : ''}</span>
           <span class="order-time">${formatTime(o.created_at)}</span>
         </div>
         <div class="order-lines">

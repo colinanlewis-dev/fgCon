@@ -136,6 +136,8 @@ class OrderItemIn(BaseModel):
 class OrderIn(BaseModel):
     eventId: int
     items: list[OrderItemIn]
+    isVIP: bool = False
+    vipNote: Optional[str] = None
 
 
 @app.get("/orders", response_class=HTMLResponse)
@@ -161,10 +163,20 @@ def get_orders(eventId: int):
 
 @app.post("/api/orders", status_code=201)
 def create_order(order: OrderIn):
-    result = supabase.table("orders").insert({"eventId": order.eventId}).execute()
+    result = supabase.table("orders").insert({
+        "eventId": order.eventId,
+        "isVIP": order.isVIP,
+        "vipNote": order.vipNote,
+    }).execute()
     new_order = result.data[0]
+    price_override = 0.0 if order.isVIP else None
     order_items = [
-        {"orderId": new_order["id"], "menuItemId": i.menuItemId, "quantity": i.quantity, "priceAtTime": i.priceAtTime}
+        {
+            "orderId": new_order["id"],
+            "menuItemId": i.menuItemId,
+            "quantity": i.quantity,
+            "priceAtTime": price_override if price_override is not None else i.priceAtTime,
+        }
         for i in order.items
     ]
     supabase.table("orderItems").insert(order_items).execute()
