@@ -102,9 +102,9 @@
       <tr>
         <td>${esc(item.itemName)}</td>
         <td><span class="badge">${esc(item.itemType)}</span></td>
-        <td>$${(item.itemCost / 100).toFixed(2)}</td>
+        <td>$${item.itemCost.toFixed(2)}</td>
         <td><div class="actions">
-          <button class="btn-edit" onclick="startEdit(${item.id}, '${esc(item.itemName)}', ${item.itemCost / 100}, '${esc(item.itemType)}')">Edit</button>
+          <button class="btn-edit" onclick="startEdit(${item.id}, '${esc(item.itemName)}', ${item.itemCost}, '${esc(item.itemType)}')">Edit</button>
           <button class="btn-del" onclick="deleteItem(${item.id})">Delete</button>
         </div></td>
       </tr>`).join('');
@@ -117,7 +117,7 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         itemName: document.getElementById('addName').value,
-        itemCost: Math.round(parseFloat(document.getElementById('addCost').value) * 100),
+        itemCost: parseFloat(document.getElementById('addCost').value),
         itemType: document.getElementById('addType').value,
       })
     });
@@ -147,7 +147,7 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         itemName: document.getElementById('editName').value,
-        itemCost: parseInt(document.getElementById('editCost').value),
+        itemCost: parseFloat(document.getElementById('editCost').value),
         itemType: document.getElementById('editType').value,
       })
     });

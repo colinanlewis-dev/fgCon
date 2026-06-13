@@ -10,7 +10,7 @@ app = FastAPI()
 
 class MenuItem(BaseModel):
     itemName: str
-    itemCost: int
+    itemCost: float
     itemType: str
 
 
