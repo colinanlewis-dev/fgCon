@@ -75,8 +75,17 @@
     .vip-note-wrap input { font-size: .85rem; padding: .4rem .6rem; border-color: #fde68a; }
     .badge-vip { background: #fef3c7; color: #92400e; display: inline-block; padding: .15rem .5rem; border-radius: 99px; font-size: .72rem; font-weight: 700; margin-left: .4rem; }
     .badge-combo { background: #e0f2fe; color: #075985; display: inline-block; padding: .15rem .5rem; border-radius: 99px; font-size: .72rem; font-weight: 700; margin-left: .4rem; }
-    .payment-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; font-size: .88rem; font-weight: 600; color: #374151; }
-    .payment-row select { padding: .35rem .6rem; border: 1px solid #ddd; border-radius: 6px; font-size: .88rem; cursor: pointer; }
+    .payment-options { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-bottom: 1rem; }
+    .payment-option { position: relative; }
+    .payment-option input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
+    .payment-option label { display: flex; flex-direction: column; align-items: center; gap: .3rem; padding: .7rem .5rem .55rem; border: 2px solid #e5e7eb; border-radius: 10px; cursor: pointer; transition: all .15s; user-select: none; }
+    .payment-option label:hover { border-color: #d1d5db; background: #fafafa; }
+    .payment-option .pm-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 1.25rem; line-height: 1; }
+    .payment-option .pm-label { font-size: .75rem; font-weight: 700; color: #374151; text-transform: uppercase; letter-spacing: .04em; }
+    .payment-option.cash input:checked + label { border-color: #16a34a; background: #f0fdf4; }
+    .payment-option.cash input:checked + label .pm-label { color: #16a34a; }
+    .payment-option.venmo input:checked + label { border-color: #3d95ce; background: #eff8ff; }
+    .payment-option.venmo input:checked + label .pm-label { color: #3d95ce; }
     .combo-banner { margin-bottom: 1rem; padding: .6rem .85rem; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; font-size: .82rem; color: #075985; display: flex; justify-content: space-between; align-items: center; }
     .combo-banner .cb-label { font-weight: 600; }
     .combo-banner .cb-saving { font-weight: 700; color: #0284c7; }
@@ -157,12 +166,31 @@
         <span class="cb-label">&#x1F371; Combo applied</span>
         <span class="cb-saving" id="comboSaving"></span>
       </div>
-      <div class="payment-row">
-        <label for="paymentMethod">Payment</label>
-        <select id="paymentMethod">
-          <option value="Cash">Cash</option>
-          <option value="Venmo">Venmo</option>
-        </select>
+      <div class="payment-options">
+        <div class="payment-option cash">
+          <input type="radio" name="paymentMethod" id="payCash" value="Cash" checked />
+          <label for="payCash">
+            <span class="pm-icon">
+              <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="28" height="28" rx="6" fill="#16a34a"/>
+                <text x="14" y="20" text-anchor="middle" font-size="16" font-weight="bold" font-family="system-ui,sans-serif" fill="white">$</text>
+              </svg>
+            </span>
+            <span class="pm-label">Cash</span>
+          </label>
+        </div>
+        <div class="payment-option venmo">
+          <input type="radio" name="paymentMethod" id="payVenmo" value="Venmo" />
+          <label for="payVenmo">
+            <span class="pm-icon">
+              <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="28" height="28" rx="6" fill="#3d95ce"/>
+                <text x="14" y="20" text-anchor="middle" font-size="15" font-weight="bold" font-family="system-ui,sans-serif" fill="white">V</text>
+              </svg>
+            </span>
+            <span class="pm-label">Venmo</span>
+          </label>
+        </div>
       </div>
       <button class="btn-place" id="placeBtn" onclick="placeOrder()" disabled>Place Order</button>
     </div>
@@ -447,7 +475,7 @@
         isVIP: vip,
         vipNote: vip ? (document.getElementById('vipNote').value || null) : null,
         usedCombo: !!adj,
-        paymentMethod: document.getElementById('paymentMethod').value,
+        paymentMethod: document.querySelector('input[name="paymentMethod"]:checked').value,
       }),
     });
     cart = {};
