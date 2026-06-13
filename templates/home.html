@@ -28,6 +28,16 @@
     .card .icon { font-size: 1.8rem; }
     .card .title { font-weight: 600; font-size: 1rem; }
     .card .desc { font-size: .85rem; color: #777; }
+    .card.disabled {
+      background: #f0f0f0;
+      box-shadow: none;
+      pointer-events: none;
+      cursor: not-allowed;
+      opacity: .6;
+    }
+    .card.disabled:hover { box-shadow: none; transform: none; }
+    .card .hint { font-size: .78rem; color: #e57c00; margin-top: .25rem; display: none; }
+    .card.disabled .hint { display: block; }
   </style>
 </head>
 <body>
@@ -46,12 +56,21 @@
       <span class="title">Event Manager</span>
       <span class="desc">Create, edit, and manage events</span>
     </a>
-    <a class="card" href="/orders">
+    <a class="card" id="ordersCard" href="/orders">
       <span class="icon">&#x1F9FE;</span>
       <span class="title">Orders</span>
       <span class="desc">Build and complete orders for an event</span>
+      <span class="hint">&#x26A0;&#xFE0F; No active event &mdash; set one in Event Manager first</span>
     </a>
   </div>
 </div>
+
+<script>
+  fetch('/api/events/active')
+    .then(r => r.json())
+    .then(event => {
+      if (!event) document.getElementById('ordersCard').classList.add('disabled');
+    });
+</script>
 </body>
 </html>
