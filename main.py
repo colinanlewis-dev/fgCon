@@ -145,6 +145,7 @@ class OrderIn(BaseModel):
     isVIP: bool = False
     vipNote: Optional[str] = None
     usedCombo: bool = False
+    paymentMethod: Optional[str] = None
 
 
 @app.get("/orders", response_class=HTMLResponse)
@@ -175,6 +176,7 @@ def create_order(order: OrderIn):
         "isVIP": order.isVIP,
         "vipNote": order.vipNote,
         "usedCombo": order.usedCombo,
+        "paymentMethod": order.paymentMethod,
     }).execute()
     new_order = result.data[0]
     price_override = 0.0 if order.isVIP else None

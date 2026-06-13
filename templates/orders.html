@@ -75,6 +75,8 @@
     .vip-note-wrap input { font-size: .85rem; padding: .4rem .6rem; border-color: #fde68a; }
     .badge-vip { background: #fef3c7; color: #92400e; display: inline-block; padding: .15rem .5rem; border-radius: 99px; font-size: .72rem; font-weight: 700; margin-left: .4rem; }
     .badge-combo { background: #e0f2fe; color: #075985; display: inline-block; padding: .15rem .5rem; border-radius: 99px; font-size: .72rem; font-weight: 700; margin-left: .4rem; }
+    .payment-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; font-size: .88rem; font-weight: 600; color: #374151; }
+    .payment-row select { padding: .35rem .6rem; border: 1px solid #ddd; border-radius: 6px; font-size: .88rem; cursor: pointer; }
     .combo-banner { margin-bottom: 1rem; padding: .6rem .85rem; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; font-size: .82rem; color: #075985; display: flex; justify-content: space-between; align-items: center; }
     .combo-banner .cb-label { font-weight: 600; }
     .combo-banner .cb-saving { font-weight: 700; color: #0284c7; }
@@ -154,6 +156,13 @@
       <div class="combo-banner" id="comboBanner" style="display:none">
         <span class="cb-label">&#x1F371; Combo applied</span>
         <span class="cb-saving" id="comboSaving"></span>
+      </div>
+      <div class="payment-row">
+        <label for="paymentMethod">Payment</label>
+        <select id="paymentMethod">
+          <option value="Cash">Cash</option>
+          <option value="Venmo">Venmo</option>
+        </select>
       </div>
       <button class="btn-place" id="placeBtn" onclick="placeOrder()" disabled>Place Order</button>
     </div>
@@ -438,6 +447,7 @@
         isVIP: vip,
         vipNote: vip ? (document.getElementById('vipNote').value || null) : null,
         usedCombo: !!adj,
+        paymentMethod: document.getElementById('paymentMethod').value,
       }),
     });
     cart = {};
