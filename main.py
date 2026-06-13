@@ -189,3 +189,55 @@ def delete_order(order_id: int):
     result = supabase.table("orders").delete().eq("id", order_id).execute()
     if not result.data:
         raise HTTPException(status_code=404, detail="Order not found")
+
+
+# --- Combo Settings ---
+
+class ComboSetting(BaseModel):
+    comboName: str
+    maxDrinkCost: float
+    maxSideCost: float
+    comboPrice: float
+
+
+class ComboSettingUpdate(BaseModel):
+    comboName: Optional[str] = None
+    maxDrinkCost: Optional[float] = None
+    maxSideCost: Optional[float] = None
+    comboPrice: Optional[float] = None
+
+
+@app.get("/combos", response_class=HTMLResponse)
+def combos_page():
+    with open("templates/combos.html", encoding="utf-8") as f:
+        return f.read()
+
+
+@app.get("/api/combos")
+def get_combos():
+    result = supabase.table("comboSettings").select("*").order("id").execute()
+    return result.data
+
+
+@app.post("/api/combos", status_code=201)
+def create_combo(combo: ComboSetting):
+    result = supabase.table("comboSettings").insert(combo.model_dump()).execute()
+    return result.data[0]
+
+
+@app.put("/api/combos/{combo_id}")
+def update_combo(combo_id: int, combo: ComboSettingUpdate):
+    updates = {k: v for k, v in combo.model_dump().items() if v is not None}
+    if not updates:
+        raise HTTPException(status_code=400, detail="No fields to update")
+    result = supabase.table("comboSettings").update(updates).eq("id", combo_id).execute()
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Combo not found")
+    return result.data[0]
+
+
+@app.delete("/api/combos/{combo_id}", status_code=204)
+def delete_combo(combo_id: int):
+    result = supabase.table("comboSettings").delete().eq("id", combo_id).execute()
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Combo not found")

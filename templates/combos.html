@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Combo Manager</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #f5f5f5; color: #222; }
+    header { background: #1a1a2e; color: white; padding: 1.2rem 2rem; }
+    header a { color: #a5b4fc; font-size: .85rem; text-decoration: none; display: block; margin-bottom: .4rem; }
+    header h1 { font-size: 1.4rem; font-weight: 600; }
+    .container { max-width: 860px; margin: 2rem auto; padding: 0 1rem; }
+
+    .card { background: white; border-radius: 10px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .card h2 { font-size: .75rem; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 1rem; }
+
+    form { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: .75rem; align-items: end; }
+    label { display: flex; flex-direction: column; gap: .3rem; font-size: .8rem; font-weight: 500; color: #555; }
+    input { padding: .55rem .75rem; border: 1px solid #ddd; border-radius: 6px; font-size: .95rem; width: 100%; }
+    input:focus { outline: 2px solid #4f46e5; border-color: transparent; }
+    button { padding: .55rem 1.2rem; border: none; border-radius: 6px; font-size: .9rem; font-weight: 600; cursor: pointer; white-space: nowrap; }
+    .btn-add    { background: #4f46e5; color: white; }
+    .btn-add:hover { background: #4338ca; }
+    .btn-save   { background: #059669; color: white; }
+    .btn-save:hover { background: #047857; }
+    .btn-cancel { background: #e5e7eb; color: #374151; }
+    .btn-del    { background: transparent; color: #dc2626; border: 1px solid #fca5a5; font-size: .8rem; padding: .35rem .7rem; }
+    .btn-del:hover { background: #fef2f2; }
+    .btn-edit   { background: transparent; color: #4f46e5; border: 1px solid #a5b4fc; font-size: .8rem; padding: .35rem .7rem; }
+    .btn-edit:hover { background: #eef2ff; }
+
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; font-size: .75rem; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: .05em; padding: .5rem .75rem; border-bottom: 2px solid #f0f0f0; }
+    td { padding: .7rem .75rem; border-bottom: 1px solid #f5f5f5; font-size: .92rem; vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafafa; }
+    .actions { display: flex; gap: .4rem; }
+    .empty { text-align: center; color: #aaa; padding: 2rem; font-size: .9rem; }
+
+    #toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: #1a1a2e; color: white; padding: .7rem 1.2rem; border-radius: 8px; font-size: .85rem; opacity: 0; transition: opacity .3s; pointer-events: none; }
+    #toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+<header>
+  <a href="/">&#8592; Home</a>
+  <h1>Combo Manager</h1>
+</header>
+
+<div class="container">
+  <!-- Add form -->
+  <div class="card">
+    <h2>Add Combo</h2>
+    <form id="addForm">
+      <label>Name <input id="addName" placeholder="e.g. Value Combo" required /></label>
+      <label>Max Drink Cost ($) <input id="addDrink" type="number" min="0" step="0.01" placeholder="2.00" required /></label>
+      <label>Max Side Cost ($) <input id="addSide" type="number" min="0" step="0.01" placeholder="1.50" required /></label>
+      <label>Combo Price ($) <input id="addPrice" type="number" min="0" step="0.01" placeholder="9.99" required /></label>
+      <button type="submit" class="btn-add">+ Add</button>
+    </form>
+  </div>
+
+  <!-- Edit form -->
+  <div class="card" id="editCard" style="display:none">
+    <h2>Edit Combo</h2>
+    <form id="editForm">
+      <label>Name <input id="editName" required /></label>
+      <label>Max Drink Cost ($) <input id="editDrink" type="number" min="0" step="0.01" required /></label>
+      <label>Max Side Cost ($) <input id="editSide" type="number" min="0" step="0.01" required /></label>
+      <label>Combo Price ($) <input id="editPrice" type="number" min="0" step="0.01" required /></label>
+      <div style="display:flex;gap:.5rem">
+        <button type="submit" class="btn-save">Save</button>
+        <button type="button" class="btn-cancel" onclick="cancelEdit()">Cancel</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Table -->
+  <div class="card">
+    <h2>Combos</h2>
+    <table>
+      <thead>
+        <tr><th>Name</th><th>Max Drink</th><th>Max Side</th><th>Combo Price</th><th></th></tr>
+      </thead>
+      <tbody id="combosBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  let editingId = null;
+
+  async function load() {
+    const res = await fetch('/api/combos');
+    const combos = await res.json();
+    const tbody = document.getElementById('combosBody');
+    if (!combos.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty">No combos yet &mdash; add one above.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = combos.map(c => `
+      <tr>
+        <td>${esc(c.comboName)}</td>
+        <td>$${c.maxDrinkCost.toFixed(2)}</td>
+        <td>$${c.maxSideCost.toFixed(2)}</td>
+        <td>$${c.comboPrice.toFixed(2)}</td>
+        <td><div class="actions">
+          <button class="btn-edit" onclick="startEdit(${c.id}, '${esc(c.comboName)}', ${c.maxDrinkCost}, ${c.maxSideCost}, ${c.comboPrice})">Edit</button>
+          <button class="btn-del" onclick="deleteCombo(${c.id})">Delete</button>
+        </div></td>
+      </tr>`).join('');
+  }
+
+  document.getElementById('addForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    await fetch('/api/combos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        comboName: document.getElementById('addName').value,
+        maxDrinkCost: parseFloat(document.getElementById('addDrink').value),
+        maxSideCost: parseFloat(document.getElementById('addSide').value),
+        comboPrice: parseFloat(document.getElementById('addPrice').value),
+      })
+    });
+    e.target.reset();
+    toast('Combo added');
+    load();
+  });
+
+  function startEdit(id, name, drink, side, price) {
+    editingId = id;
+    document.getElementById('editName').value = name;
+    document.getElementById('editDrink').value = drink;
+    document.getElementById('editSide').value = side;
+    document.getElementById('editPrice').value = price;
+    document.getElementById('editCard').style.display = '';
+    document.getElementById('editCard').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function cancelEdit() {
+    editingId = null;
+    document.getElementById('editCard').style.display = 'none';
+  }
+
+  document.getElementById('editForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    await fetch(`/api/combos/${editingId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        comboName: document.getElementById('editName').value,
+        maxDrinkCost: parseFloat(document.getElementById('editDrink').value),
+        maxSideCost: parseFloat(document.getElementById('editSide').value),
+        comboPrice: parseFloat(document.getElementById('editPrice').value),
+      })
+    });
+    cancelEdit();
+    toast('Combo updated');
+    load();
+  });
+
+  async function deleteCombo(id) {
+    if (!confirm('Delete this combo?')) return;
+    await fetch(`/api/combos/${id}`, { method: 'DELETE' });
+    toast('Combo deleted');
+    load();
+  }
+
+  function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  load();
+</script>
+</body>
+</html>
