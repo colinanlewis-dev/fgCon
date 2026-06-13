@@ -53,6 +53,15 @@
     .vip-note-wrap { display: none; }
     .vip-note-wrap input { font-size: .85rem; padding: .4rem .6rem; border-color: #fde68a; }
     .badge-vip { background: #fef3c7; color: #92400e; display: inline-block; padding: .15rem .5rem; border-radius: 99px; font-size: .72rem; font-weight: 700; margin-left: .4rem; }
+    .badge-combo { background: #e0f2fe; color: #075985; display: inline-block; padding: .15rem .5rem; border-radius: 99px; font-size: .72rem; font-weight: 700; margin-left: .4rem; }
+    .combo-section { margin-bottom: 1rem; padding: .75rem; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; display: flex; flex-direction: column; gap: .5rem; }
+    .combo-row { display: flex; align-items: center; gap: .6rem; font-size: .88rem; font-weight: 600; color: #075985; }
+    .toggle-blue:checked { background: #0284c7; }
+    .combo-field { display: flex; flex-direction: column; gap: .2rem; font-size: .78rem; color: #555; font-weight: 500; margin-top: .25rem; }
+    .combo-field select { font-size: .82rem; padding: .3rem .5rem; border: 1px solid #bae6fd; border-radius: 5px; width: 100%; }
+    .combo-preview { margin-top: .5rem; font-size: .8rem; color: #075985; background: #e0f2fe; border-radius: 5px; padding: .5rem .65rem; }
+    .combo-preview .cp-row { display: flex; justify-content: space-between; padding: .15rem 0; }
+    .combo-preview .cp-total { display: flex; justify-content: space-between; font-weight: 700; border-top: 1px solid #bae6fd; margin-top: .3rem; padding-top: .3rem; }
     .half-price-bar { display: flex; align-items: center; justify-content: space-between; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: .65rem .85rem; margin-bottom: 1rem; }
     .half-price-bar .hp-label { font-size: .85rem; font-weight: 600; color: #166534; display: flex; align-items: center; gap: .5rem; }
     .half-price-bar .hp-desc { font-size: .75rem; color: #4ade80; margin-top: .1rem; }
@@ -126,6 +135,31 @@
           <input type="text" id="vipNote" placeholder="VIP name or note (optional)" />
         </div>
       </div>
+      <div class="combo-section">
+        <div class="combo-row">
+          <input class="toggle toggle-blue" type="checkbox" id="comboToggle" onchange="onComboToggle()" />
+          <label for="comboToggle">Apply Combo</label>
+        </div>
+        <div id="comboDetails" style="display:none">
+          <div class="combo-field">
+            <label>Combo</label>
+            <select id="comboSelect" onchange="renderComboPreview()"></select>
+          </div>
+          <div class="combo-field">
+            <label>Main item (Cooked / Fresh)</label>
+            <select id="comboMain" onchange="renderComboPreview()"></select>
+          </div>
+          <div class="combo-field">
+            <label>Drink</label>
+            <select id="comboDrink" onchange="renderComboPreview()"></select>
+          </div>
+          <div class="combo-field">
+            <label>Side</label>
+            <select id="comboSide" onchange="renderComboPreview()"></select>
+          </div>
+          <div id="comboPreview" style="display:none"></div>
+        </div>
+      </div>
       <button class="btn-place" id="placeBtn" onclick="placeOrder()" disabled>Place Order</button>
     </div>
   </div>
@@ -136,6 +170,7 @@
 <script>
   let cart = {};
   let menuData = [];
+  let comboData = [];
   let selectedEventId = null;
 
   function isHalfPrice() { return document.getElementById('halfPriceToggle').checked; }
@@ -163,7 +198,7 @@
       <span class="ev-date">${formatDate(event.eventDate)}${event.eventSize ? ' &mdash; ' + esc(event.eventSize) + ' guests' : ''}</span>
     </div>`;
     document.getElementById('mainContent').style.display = '';
-    await Promise.all([loadMenu(), loadOrders()]);
+    await Promise.all([loadMenu(), loadOrders(), loadCombos()]);
     renderCart();
   }
 
@@ -223,6 +258,88 @@
     renderCart();
   }
 
+  async function loadCombos() {
+    const res = await fetch('/api/combos');
+    comboData = await res.json();
+    const sel = document.getElementById('comboSelect');
+    sel.innerHTML = comboData.length
+      ? comboData.map(c => `<option value="${c.id}">${esc(c.comboName)} (+$${parseFloat(c.comboPrice).toFixed(2)})</option>`).join('')
+      : '<option value="">No combos configured</option>';
+  }
+
+  function isCombo() { return document.getElementById('comboToggle').checked; }
+
+  function onComboToggle() {
+    document.getElementById('comboDetails').style.display = isCombo() ? 'block' : 'none';
+    if (isCombo()) updateComboSelectors();
+    renderCart();
+  }
+
+  function cartItemsByType(...types) {
+    return Object.entries(cart)
+      .filter(([, item]) => types.some(t => item.type.toLowerCase() === t.toLowerCase()))
+      .map(([id, item]) => ({ id: parseInt(id), ...item }));
+  }
+
+  function updateComboSelectors() {
+    const fill = (selId, items, label) => {
+      document.getElementById(selId).innerHTML = items.length
+        ? items.map(i => `<option value="${i.id}">${esc(i.name)} ($${i.price.toFixed(2)})</option>`).join('')
+        : `<option value="">No ${label} in cart</option>`;
+    };
+    fill('comboMain', cartItemsByType('Cooked', 'Fresh'), 'main item');
+    fill('comboDrink', cartItemsByType('Drink'), 'drink');
+    fill('comboSide', cartItemsByType('Side'), 'side');
+    renderComboPreview();
+  }
+
+  function computeComboAdjustments() {
+    const comboId = parseInt(document.getElementById('comboSelect').value);
+    const mainId  = parseInt(document.getElementById('comboMain').value);
+    const drinkId = parseInt(document.getElementById('comboDrink').value);
+    const sideId  = parseInt(document.getElementById('comboSide').value);
+    if (!comboId || !mainId || !drinkId || !sideId) return null;
+    const combo = comboData.find(c => c.id === comboId);
+    if (!combo || !cart[mainId] || !cart[drinkId] || !cart[sideId]) return null;
+
+    // Pool flows to drink first, then side (carry-over built in)
+    let pool = parseFloat(combo.maxDrinkCost) + parseFloat(combo.maxSideCost);
+    const drinkSaved = Math.min(cart[drinkId].price, pool); pool -= drinkSaved;
+    const sideSaved  = Math.min(cart[sideId].price, pool);
+
+    return {
+      combo, mainId, drinkId, sideId,
+      prices: {
+        [mainId]:  cart[mainId].price  + parseFloat(combo.comboPrice),
+        [drinkId]: Math.max(0, cart[drinkId].price - drinkSaved),
+        [sideId]:  Math.max(0, cart[sideId].price  - sideSaved),
+      },
+    };
+  }
+
+  function renderComboPreview() {
+    const preview = document.getElementById('comboPreview');
+    const adj = computeComboAdjustments();
+    if (!adj) { preview.style.display = 'none'; return; }
+    const { mainId, drinkId, sideId, prices } = adj;
+    const fmt = (id) => {
+      const orig = cart[id].price, adjusted = prices[id];
+      return orig === adjusted
+        ? `$${orig.toFixed(2)}`
+        : `<s style="color:#bbb;font-weight:400">$${orig.toFixed(2)}</s> <strong>$${adjusted.toFixed(2)}</strong>`;
+    };
+    const comboTotal = Object.entries(cart).reduce((sum, [id, item]) => {
+      const p = prices[parseInt(id)] !== undefined ? prices[parseInt(id)] : item.price;
+      return sum + p * item.qty;
+    }, 0);
+    preview.style.display = 'block';
+    preview.innerHTML = `
+      <div class="cp-row"><span>${esc(cart[mainId].name)}</span><span>${fmt(mainId)}</span></div>
+      <div class="cp-row"><span>${esc(cart[drinkId].name)}</span><span>${fmt(drinkId)}</span></div>
+      <div class="cp-row"><span>${esc(cart[sideId].name)}</span><span>${fmt(sideId)}</span></div>
+      <div class="cp-total"><span>New total</span><span>$${comboTotal.toFixed(2)}</span></div>`;
+  }
+
   function isVip() { return document.getElementById('vipToggle').checked; }
 
   function onVipToggle() {
@@ -251,17 +368,19 @@
     }).join('');
     document.getElementById('cartTotal').textContent = vip ? '$0.00 (VIP)' : '$' + total.toFixed(2);
     document.getElementById('placeBtn').disabled = false;
+    if (isCombo()) updateComboSelectors();
   }
 
   async function placeOrder() {
     if (!selectedEventId || !Object.keys(cart).length) return;
     document.getElementById('placeBtn').disabled = true;
     const vip = isVip();
-    const items = Object.entries(cart).map(([id, item]) => ({
-      menuItemId: parseInt(id),
-      quantity: item.qty,
-      priceAtTime: item.price,
-    }));
+    const adj = (!vip && isCombo()) ? computeComboAdjustments() : null;
+    const items = Object.entries(cart).map(([id, item]) => {
+      const intId = parseInt(id);
+      const price = (adj && adj.prices[intId] !== undefined) ? adj.prices[intId] : item.price;
+      return { menuItemId: intId, quantity: item.qty, priceAtTime: price };
+    });
     await fetch('/api/orders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -270,6 +389,7 @@
         items,
         isVIP: vip,
         vipNote: vip ? (document.getElementById('vipNote').value || null) : null,
+        usedCombo: !!adj,
       }),
     });
     cart = {};
@@ -277,6 +397,9 @@
     document.getElementById('vipToggle').checked = false;
     document.getElementById('vipNote').value = '';
     document.getElementById('vipNoteWrap').style.display = 'none';
+    document.getElementById('comboToggle').checked = false;
+    document.getElementById('comboDetails').style.display = 'none';
+    document.getElementById('comboPreview').style.display = 'none';
     renderCart();
     await loadOrders();
     toast(vip ? 'VIP order placed!' : 'Order placed!');
@@ -291,7 +414,7 @@
       const total = o.items.reduce((s, i) => s + i.priceAtTime * i.quantity, 0);
       return `<div class="order-card">
         <div class="order-header">
-          <span class="order-id">Order #${o.id}${o.isVIP ? '<span class="badge-vip">&#x2B50; VIP' + (o.vipNote ? ' &mdash; ' + esc(o.vipNote) : '') + '</span>' : ''}</span>
+          <span class="order-id">Order #${o.id}${o.isVIP ? '<span class="badge-vip">&#x2B50; VIP' + (o.vipNote ? ' &mdash; ' + esc(o.vipNote) : '') + '</span>' : ''}${o.usedCombo ? '<span class="badge-combo">&#x1F371; Combo</span>' : ''}</span>
           <span class="order-time">${formatTime(o.created_at)}</span>
         </div>
         <div class="order-lines">

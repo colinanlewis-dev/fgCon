@@ -138,6 +138,7 @@ class OrderIn(BaseModel):
     items: list[OrderItemIn]
     isVIP: bool = False
     vipNote: Optional[str] = None
+    usedCombo: bool = False
 
 
 @app.get("/orders", response_class=HTMLResponse)
@@ -167,6 +168,7 @@ def create_order(order: OrderIn):
         "eventId": order.eventId,
         "isVIP": order.isVIP,
         "vipNote": order.vipNote,
+        "usedCombo": order.usedCombo,
     }).execute()
     new_order = result.data[0]
     price_override = 0.0 if order.isVIP else None
