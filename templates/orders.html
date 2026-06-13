@@ -479,10 +479,11 @@
       }),
     });
     cart = {};
-    menuData.forEach(m => { const el = document.getElementById('qty-' + m.id); if (el) el.textContent = '0'; });
     document.getElementById('vipToggle').checked = false;
     document.getElementById('vipNote').value = '';
     document.getElementById('vipNoteWrap').style.display = 'none';
+    document.querySelector('input[name="paymentMethod"][value="Cash"]').checked = true;
+    renderMenu();
     renderCart();
     await loadOrders();
     toast(vip ? 'VIP order placed!' : 'Order placed!');
