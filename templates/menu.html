@@ -63,7 +63,13 @@
     <form id="addForm">
       <label>Name <input id="addName" placeholder="e.g. Margherita" required /></label>
       <label>Cost ($) <input id="addCost" type="number" min="0" step="0.01" placeholder="12.99" required /></label>
-      <label>Type <input id="addType" placeholder="e.g. Pizza" required /></label>
+      <label>Type <select id="addType" required>
+        <option value="">Select type</option>
+        <option value="Cooked">Cooked</option>
+        <option value="Fresh">Fresh</option>
+        <option value="Side">Side</option>
+        <option value="Drink">Drink</option>
+      </select></label>
       <label class="toggle-label">Available
         <div class="toggle-wrap"><input class="toggle" id="addAvailable" type="checkbox" checked /></div>
       </label>
@@ -77,7 +83,12 @@
     <form id="editForm">
       <label>Name <input id="editName" required /></label>
       <label>Cost ($) <input id="editCost" type="number" min="0" step="0.01" required /></label>
-      <label>Type <input id="editType" required /></label>
+      <label>Type <select id="editType" required>
+        <option value="Cooked">Cooked</option>
+        <option value="Fresh">Fresh</option>
+        <option value="Side">Side</option>
+        <option value="Drink">Drink</option>
+      </select></label>
       <label class="toggle-label">Available
         <div class="toggle-wrap"><input class="toggle" id="editAvailable" type="checkbox" /></div>
       </label>
