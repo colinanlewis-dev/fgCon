@@ -131,8 +131,8 @@
       <div id="itemPanel"></div>
     </div>
     <div class="card">
-      <h2>Past Orders</h2>
-      <div id="ordersList"></div>
+      <h2>Popular Items</h2>
+      <div id="popularList"></div>
     </div>
   </div>
 
@@ -284,6 +284,10 @@
     if (qtyEl) qtyEl.textContent = next;
     const cardEl = document.getElementById('card-' + id);
     if (cardEl) cardEl.classList.toggle('in-cart', next > 0);
+    const popQtyEl = document.getElementById('pop-qty-' + id);
+    if (popQtyEl) popQtyEl.textContent = next;
+    const popCardEl = document.getElementById('pop-card-' + id);
+    if (popCardEl) popCardEl.classList.toggle('in-cart', next > 0);
     // Refresh tile badges
     renderMenu();
     renderCart();
@@ -449,28 +453,38 @@
   async function loadOrders() {
     const res = await fetch(`/api/orders?eventId=${selectedEventId}`);
     const orders = await res.json();
-    const el = document.getElementById('ordersList');
-    if (!orders.length) { el.innerHTML = '<p class="empty">No orders yet.</p>'; return; }
-    el.innerHTML = orders.map(o => {
-      const total = o.items.reduce((s, i) => s + i.priceAtTime * i.quantity, 0);
-      return `<div class="order-card">
-        <div class="order-header">
-          <span class="order-id">Order #${o.id}${o.isVIP ? '<span class="badge-vip">&#x2B50; VIP' + (o.vipNote ? ' &mdash; ' + esc(o.vipNote) : '') + '</span>' : ''}${o.usedCombo ? '<span class="badge-combo">&#x1F371; Combo</span>' : ''}</span>
-          <span class="order-time">${formatTime(o.created_at)}</span>
-        </div>
-        <div class="order-lines">
-          ${o.items.map(i => `
-            <div class="order-line">
-              <span>${esc(i.menu?.itemName || 'Item')} x${i.quantity}</span>
-              <span>$${(i.priceAtTime * i.quantity).toFixed(2)}</span>
-            </div>`).join('')}
-        </div>
-        <div class="order-footer">
-          <span class="order-total">$${total.toFixed(2)}</span>
-          <button class="btn-del" onclick="deleteOrder(${o.id})">Delete</button>
+    const el = document.getElementById('popularList');
+    if (!orders.length) {
+      el.innerHTML = '<p class="empty">No orders yet &mdash; popular items will appear here.</p>';
+      return;
+    }
+    // Aggregate quantities sold across all orders this event
+    const totals = {};
+    orders.forEach(o => o.items.forEach(i => {
+      const id = i.menuItemId;
+      if (!totals[id]) totals[id] = { id, name: i.menu?.itemName || 'Item', qty: 0 };
+      totals[id].qty += i.quantity;
+    }));
+    const top5 = Object.values(totals).sort((a, b) => b.qty - a.qty).slice(0, 5);
+    el.innerHTML = `<div class="item-grid">${top5.map(t => {
+      const m = menuData.find(m => m.id === t.id);
+      if (!m) return '';
+      const ep = effectivePrice(m);
+      const qty = cart[m.id] ? cart[m.id].qty : 0;
+      const priceHtml = isDiscounted(m)
+        ? `<span class="price-orig">$${m.itemCost.toFixed(2)}</span> <span class="price-half">$${ep.toFixed(2)}</span>`
+        : `$${ep.toFixed(2)}`;
+      return `<div class="item-card${qty > 0 ? ' in-cart' : ''}" id="pop-card-${m.id}">
+        <div class="ic-name">${esc(m.itemName)}</div>
+        <div class="ic-price" id="pop-price-${m.id}">${priceHtml}</div>
+        <div style="font-size:.7rem;color:#9ca3af">Ordered ${t.qty}x</div>
+        <div class="ic-ctrl">
+          <button class="qty-btn" onclick="adjustQty(${m.id}, -1)">&#8722;</button>
+          <span class="qty-num" id="pop-qty-${m.id}">${qty}</span>
+          <button class="qty-btn" onclick="adjustQty(${m.id}, 1)">+</button>
         </div>
       </div>`;
-    }).join('');
+    }).join('')}</div>`;
   }
 
   async function deleteOrder(id) {
