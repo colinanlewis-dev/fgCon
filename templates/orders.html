@@ -245,41 +245,74 @@
   }
 
   function autoApplyCombo() {
-    const mains  = cartItemsByType('Cooked', 'Fresh');
-    const drinks = cartItemsByType('Drink');
-    const sides  = cartItemsByType('Side', 'Fresh');
-    if (!mains.length || !drinks.length || !sides.length || !comboData.length) {
-      activeCombo = null;
-      return;
-    }
-    let best = null, bestSavings = 0;
-    for (const combo of comboData) {
-      const pool0 = parseFloat(combo.maxDrinkCost) + parseFloat(combo.maxSideCost);
-      const cp    = parseFloat(combo.comboPrice);
-      for (const main of mains) {
-        for (const drink of drinks) {
-          for (const side of sides) {
-            if (main.id === drink.id || main.id === side.id || drink.id === side.id) continue;
-            let pool = pool0;
-            const drinkSaved = Math.min(drink.price, pool); pool -= drinkSaved;
-            const sideSaved  = Math.min(side.price, pool);
-            const savings    = drinkSaved + sideSaved - cp;
-            if (savings > bestSavings) {
-              bestSavings = savings;
-              best = {
-                combo, mainId: main.id, drinkId: drink.id, sideId: side.id, savings,
-                prices: {
-                  [main.id]:  main.price  + cp,
-                  [drink.id]: Math.max(0, drink.price - drinkSaved),
-                  [side.id]:  Math.max(0, side.price  - sideSaved),
-                },
-              };
+    if (!comboData.length) { activeCombo = null; return; }
+
+    // Track remaining units available for combo assignment
+    const remaining = {};
+    Object.entries(cart).forEach(([id, item]) => {
+      remaining[parseInt(id)] = item.qty;
+    });
+
+    // Cumulative price delta per item across all applied combos
+    const deltas = {};
+    let totalSavings = 0;
+    let comboCount = 0;
+
+    let keepTrying = true;
+    while (keepTrying) {
+      keepTrying = false;
+
+      const avail = (id) => remaining[id] > 0;
+      const mains  = cartItemsByType('Cooked', 'Fresh').filter(i => avail(i.id));
+      const drinks = cartItemsByType('Drink').filter(i => avail(i.id));
+      const sides  = cartItemsByType('Side', 'Fresh').filter(i => avail(i.id));
+      if (!mains.length || !drinks.length || !sides.length) break;
+
+      let best = null, bestSavings = 0;
+      for (const combo of comboData) {
+        const pool0 = parseFloat(combo.maxDrinkCost) + parseFloat(combo.maxSideCost);
+        const cp    = parseFloat(combo.comboPrice);
+        for (const main of mains) {
+          for (const drink of drinks) {
+            for (const side of sides) {
+              if (main.id === drink.id || main.id === side.id || drink.id === side.id) continue;
+              let pool = pool0;
+              const drinkSaved = Math.min(drink.price, pool); pool -= drinkSaved;
+              const sideSaved  = Math.min(side.price, pool);
+              const savings    = drinkSaved + sideSaved - cp;
+              if (savings > bestSavings) {
+                bestSavings = savings;
+                best = { combo, main, drink, side, drinkSaved, sideSaved, savings, cp };
+              }
             }
           }
         }
       }
+
+      if (best) {
+        const { main, drink, side, drinkSaved, sideSaved, cp } = best;
+        remaining[main.id]--;
+        remaining[drink.id]--;
+        remaining[side.id]--;
+        deltas[main.id]  = (deltas[main.id]  || 0) + cp;
+        deltas[drink.id] = (deltas[drink.id] || 0) - drinkSaved;
+        deltas[side.id]  = (deltas[side.id]  || 0) - sideSaved;
+        totalSavings += best.savings;
+        comboCount++;
+        keepTrying = true;
+      }
     }
-    activeCombo = best;
+
+    if (!comboCount) { activeCombo = null; return; }
+
+    // Blend per-unit price: spread total delta evenly across all units of that item
+    const prices = {};
+    for (const [id, delta] of Object.entries(deltas)) {
+      const intId = parseInt(id);
+      prices[intId] = Math.max(0, cart[intId].price + delta / cart[intId].qty);
+    }
+
+    activeCombo = { count: comboCount, savings: totalSavings, prices };
   }
 
   function isVip() { return document.getElementById('vipToggle').checked; }
@@ -311,6 +344,8 @@
     autoApplyCombo();
     const banner = document.getElementById('comboBanner');
     if (!vip && activeCombo) {
+      const label = document.querySelector('#comboBanner .cb-label');
+      label.textContent = `🍱 ${activeCombo.count > 1 ? activeCombo.count + ' Combos' : 'Combo'} applied`;
       document.getElementById('comboSaving').textContent = `Saved $${activeCombo.savings.toFixed(2)}`;
       banner.style.display = 'flex';
       total = Object.entries(cart).reduce((sum, [id, item]) => {
