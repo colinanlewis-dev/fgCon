@@ -21,18 +21,39 @@
     .event-banner .ev-date { font-size: .8rem; color: #666; }
     .no-event { text-align: center; color: #aaa; padding: 3rem 1rem; font-size: .95rem; }
 
-    /* Menu items */
-    .type-group { margin-bottom: 1.2rem; }
-    .type-label { font-size: .7rem; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: .08em; margin-bottom: .5rem; }
-    .menu-item { display: flex; align-items: center; justify-content: space-between; padding: .6rem .5rem; border-radius: 6px; }
-    .menu-item:hover { background: #f9f9f9; }
-    .menu-item .info { flex: 1; }
-    .menu-item .name { font-weight: 500; font-size: .9rem; }
-    .menu-item .price { font-size: .8rem; color: #777; margin-top: .1rem; }
-    .qty-ctrl { display: flex; align-items: center; gap: .4rem; }
-    .qty-btn { width: 26px; height: 26px; border: 1px solid #ddd; border-radius: 6px; background: white; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; }
+    /* Type tiles */
+    .type-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; margin-bottom: 1rem; }
+    .type-tile { background: white; border: 2px solid #e5e7eb; border-radius: 10px; padding: .8rem .5rem .6rem; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: .2rem; transition: all .15s; position: relative; }
+    .type-tile:hover { border-color: #d1d5db; transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,.07); }
+    .type-tile .tile-icon { font-size: 1.5rem; line-height: 1; }
+    .type-tile .tile-name { font-size: .78rem; font-weight: 700; color: #374151; text-transform: uppercase; letter-spacing: .05em; }
+    .type-tile .tile-meta { font-size: .7rem; color: #9ca3af; }
+    .type-tile .tile-badge { position: absolute; top: .35rem; right: .45rem; background: #4f46e5; color: white; border-radius: 99px; font-size: .65rem; font-weight: 700; padding: .1rem .38rem; min-width: 1.1rem; text-align: center; line-height: 1.4; }
+    .type-tile.t-active { color: white; }
+    .type-tile.t-cooked { border-color: #ea580c; background: #ea580c; }
+    .type-tile.t-cooked .tile-name { color: white; }
+    .type-tile.t-cooked .tile-meta { color: rgba(255,255,255,.75); }
+    .type-tile.t-fresh  { border-color: #16a34a; background: #16a34a; }
+    .type-tile.t-fresh .tile-name { color: white; }
+    .type-tile.t-fresh .tile-meta { color: rgba(255,255,255,.75); }
+    .type-tile.t-side   { border-color: #7c3aed; background: #7c3aed; }
+    .type-tile.t-side .tile-name { color: white; }
+    .type-tile.t-side .tile-meta { color: rgba(255,255,255,.75); }
+    .type-tile.t-drink  { border-color: #0284c7; background: #0284c7; }
+    .type-tile.t-drink .tile-name { color: white; }
+    .type-tile.t-drink .tile-meta { color: rgba(255,255,255,.75); }
+    .type-tile.t-cooked .tile-badge, .type-tile.t-fresh .tile-badge,
+    .type-tile.t-side .tile-badge, .type-tile.t-drink .tile-badge { background: white; color: #374151; }
+    /* Item grid */
+    .item-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+    .item-card { background: #fafafa; border: 1.5px solid #f0f0f0; border-radius: 8px; padding: .6rem .7rem; display: flex; flex-direction: column; gap: .35rem; transition: border-color .1s; }
+    .item-card.in-cart { background: #eef2ff; border-color: #a5b4fc; }
+    .item-card .ic-name { font-size: .85rem; font-weight: 600; color: #1f2937; line-height: 1.2; }
+    .item-card .ic-price { font-size: .78rem; color: #6b7280; }
+    .item-card .ic-ctrl { display: flex; align-items: center; justify-content: space-between; }
+    .qty-btn { width: 28px; height: 28px; border: 1px solid #ddd; border-radius: 6px; background: white; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; flex-shrink: 0; }
     .qty-btn:hover { background: #f0f0f0; }
-    .qty-num { min-width: 20px; text-align: center; font-size: .9rem; font-weight: 600; }
+    .qty-num { min-width: 24px; text-align: center; font-size: .9rem; font-weight: 700; }
 
     /* Cart */
     .cart-sticky { position: sticky; top: 1.5rem; }
@@ -106,8 +127,8 @@
         </div>
         <input class="toggle toggle-green" type="checkbox" id="halfPriceToggle" onchange="onHalfPriceToggle()" />
       </div>
-      <h2>Menu</h2>
-      <div id="menuItems"></div>
+      <div class="type-tiles" id="typeTiles"></div>
+      <div id="itemPanel"></div>
     </div>
     <div class="card">
       <h2>Past Orders</h2>
@@ -177,48 +198,77 @@
     renderCart();
   }
 
-  async function loadMenu() {
-    const res = await fetch('/api/menu');
-    menuData = (await res.json()).filter(m => m.isAvailable);
-    const groups = {};
-    menuData.forEach(m => { (groups[m.itemType] = groups[m.itemType] || []).push(m); });
-    renderMenuPrices(groups);
+  const TYPE_ORDER  = ['Cooked', 'Fresh', 'Side', 'Drink'];
+  const TYPE_CONFIG = {
+    Cooked: { icon: '&#x1F373;', cls: 't-cooked' },
+    Fresh:  { icon: '&#x1F957;', cls: 't-fresh'  },
+    Side:   { icon: '&#x1F35F;', cls: 't-side'   },
+    Drink:  { icon: '&#x1F964;', cls: 't-drink'  },
+  };
+  let activeType = null;
+
+  function normalizeType(t) {
+    return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
   }
 
-  function renderMenuPrices(groups) {
-    if (!groups) {
-      groups = {};
-      menuData.forEach(m => { (groups[m.itemType] = groups[m.itemType] || []).push(m); });
-    }
-    document.getElementById('menuItems').innerHTML = Object.entries(groups).map(([type, items]) => `
-      <div class="type-group">
-        <div class="type-label">${esc(type)}</div>
-        ${items.map(m => {
-          const ep = effectivePrice(m);
-          const priceHtml = isDiscounted(m)
-            ? `<span class="price-orig">$${m.itemCost.toFixed(2)}</span><span class="price-half">$${ep.toFixed(2)}</span>`
-            : `$${m.itemCost.toFixed(2)}`;
-          return `<div class="menu-item" id="row-${m.id}">
-            <div class="info">
-              <div class="name">${esc(m.itemName)}</div>
-              <div class="price" id="price-${m.id}">${priceHtml}</div>
-            </div>
-            <div class="qty-ctrl">
-              <button class="qty-btn" onclick="adjustQty(${m.id}, -1)">&#8722;</button>
-              <span class="qty-num" id="qty-${m.id}">${cart[m.id] ? cart[m.id].qty : 0}</span>
-              <button class="qty-btn" onclick="adjustQty(${m.id}, 1)">+</button>
-            </div>
-          </div>`;
-        }).join('')}
-      </div>`).join('');
+  async function loadMenu() {
+    const res = await fetch('/api/menu');
+    menuData = (await res.json())
+      .filter(m => m.isAvailable)
+      .map(m => ({ ...m, itemType: normalizeType(m.itemType) }));
+    renderMenu();
+  }
+
+  function renderMenu() {
+    const groups = {};
+    menuData.forEach(m => { (groups[m.itemType] = groups[m.itemType] || []).push(m); });
+
+    // --- Tiles ---
+    document.getElementById('typeTiles').innerHTML = TYPE_ORDER
+      .filter(t => groups[t])
+      .map(t => {
+        const cfg = TYPE_CONFIG[t];
+        const inCart = menuData.filter(m => m.itemType === t && cart[m.id]).reduce((s, m) => s + cart[m.id].qty, 0);
+        const isActive = activeType === t;
+        return `<button class="type-tile${isActive ? ' ' + cfg.cls : ''}" onclick="selectType('${t}')">
+          <span class="tile-icon">${cfg.icon}</span>
+          <span class="tile-name">${t}</span>
+          <span class="tile-meta">${groups[t].length} items</span>
+          ${inCart ? `<span class="tile-badge">${inCart}</span>` : ''}
+        </button>`;
+      }).join('');
+
+    // --- Item panel ---
+    const panel = document.getElementById('itemPanel');
+    if (!activeType || !groups[activeType]) { panel.innerHTML = ''; return; }
+    panel.innerHTML = `<div class="item-grid">${
+      groups[activeType].map(m => {
+        const ep = effectivePrice(m);
+        const qty = cart[m.id] ? cart[m.id].qty : 0;
+        const priceHtml = isDiscounted(m)
+          ? `<span class="price-orig">$${m.itemCost.toFixed(2)}</span> <span class="price-half">$${ep.toFixed(2)}</span>`
+          : `$${ep.toFixed(2)}`;
+        return `<div class="item-card${qty > 0 ? ' in-cart' : ''}" id="card-${m.id}">
+          <div class="ic-name">${esc(m.itemName)}</div>
+          <div class="ic-price" id="price-${m.id}">${priceHtml}</div>
+          <div class="ic-ctrl">
+            <button class="qty-btn" onclick="adjustQty(${m.id}, -1)">&#8722;</button>
+            <span class="qty-num" id="qty-${m.id}">${qty}</span>
+            <button class="qty-btn" onclick="adjustQty(${m.id}, 1)">+</button>
+          </div>
+        </div>`;
+      }).join('')
+    }</div>`;
+  }
+
+  function selectType(type) {
+    activeType = activeType === type ? null : type;
+    renderMenu();
   }
 
   function onHalfPriceToggle() {
-    // Re-price any Fresh items already in the cart
-    menuData.forEach(m => {
-      if (cart[m.id]) cart[m.id].price = effectivePrice(m);
-    });
-    renderMenuPrices();
+    menuData.forEach(m => { if (cart[m.id]) cart[m.id].price = effectivePrice(m); });
+    renderMenu();
     renderCart();
   }
 
@@ -229,7 +279,13 @@
     const next = Math.max(0, current + delta);
     if (next === 0) { delete cart[id]; }
     else { cart[id] = { name: item.itemName, price: effectivePrice(item), qty: next, type: item.itemType }; }
-    document.getElementById('qty-' + id).textContent = next;
+    // Update qty display and card highlight in-place
+    const qtyEl = document.getElementById('qty-' + id);
+    if (qtyEl) qtyEl.textContent = next;
+    const cardEl = document.getElementById('card-' + id);
+    if (cardEl) cardEl.classList.toggle('in-cart', next > 0);
+    // Refresh tile badges
+    renderMenu();
     renderCart();
   }
 
