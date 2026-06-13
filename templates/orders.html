@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Orders</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #f5f5f5; color: #222; }
+    header { background: #1a1a2e; color: white; padding: 1.2rem 2rem; }
+    header a { color: #a5b4fc; font-size: .85rem; text-decoration: none; display: block; margin-bottom: .4rem; }
+    header h1 { font-size: 1.4rem; font-weight: 600; }
+    .container { max-width: 960px; margin: 2rem auto; padding: 0 1rem; display: grid; grid-template-columns: 1fr 320px; gap: 1.5rem; align-items: start; }
+    @media (max-width: 700px) { .container { grid-template-columns: 1fr; } }
+
+    .card { background: white; border-radius: 10px; padding: 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 1.5rem; }
+    .card h2 { font-size: .75rem; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 1rem; }
+
+    select, input { padding: .55rem .75rem; border: 1px solid #ddd; border-radius: 6px; font-size: .95rem; width: 100%; }
+    select:focus, input:focus { outline: 2px solid #4f46e5; border-color: transparent; }
+
+    /* Menu items */
+    .type-group { margin-bottom: 1.2rem; }
+    .type-label { font-size: .7rem; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: .08em; margin-bottom: .5rem; }
+    .menu-item { display: flex; align-items: center; justify-content: space-between; padding: .6rem .5rem; border-radius: 6px; }
+    .menu-item:hover { background: #f9f9f9; }
+    .menu-item .info { flex: 1; }
+    .menu-item .name { font-weight: 500; font-size: .9rem; }
+    .menu-item .price { font-size: .8rem; color: #777; margin-top: .1rem; }
+    .qty-ctrl { display: flex; align-items: center; gap: .4rem; }
+    .qty-btn { width: 26px; height: 26px; border: 1px solid #ddd; border-radius: 6px; background: white; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; }
+    .qty-btn:hover { background: #f0f0f0; }
+    .qty-num { min-width: 20px; text-align: center; font-size: .9rem; font-weight: 600; }
+
+    /* Cart */
+    .cart-sticky { position: sticky; top: 1.5rem; }
+    .cart-items { margin-bottom: 1rem; min-height: 60px; }
+    .cart-row { display: flex; justify-content: space-between; align-items: center; padding: .4rem 0; border-bottom: 1px solid #f5f5f5; font-size: .88rem; }
+    .cart-row:last-child { border-bottom: none; }
+    .cart-empty { color: #bbb; font-size: .85rem; text-align: center; padding: 1rem 0; }
+    .cart-total { display: flex; justify-content: space-between; font-weight: 700; padding-top: .75rem; border-top: 2px solid #f0f0f0; margin-bottom: 1rem; }
+    .btn-place { width: 100%; padding: .7rem; background: #4f46e5; color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; }
+    .btn-place:hover { background: #4338ca; }
+    .btn-place:disabled { background: #c7c7d9; cursor: not-allowed; }
+
+    /* Orders list */
+    .order-card { border: 1px solid #f0f0f0; border-radius: 8px; padding: 1rem; margin-bottom: .75rem; }
+    .order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: .5rem; }
+    .order-id { font-weight: 600; font-size: .9rem; }
+    .order-time { font-size: .75rem; color: #999; }
+    .order-lines { font-size: .85rem; color: #555; }
+    .order-line { display: flex; justify-content: space-between; padding: .2rem 0; }
+    .order-footer { display: flex; justify-content: space-between; align-items: center; margin-top: .6rem; border-top: 1px solid #f5f5f5; padding-top: .6rem; }
+    .order-total { font-weight: 700; font-size: .95rem; }
+    .btn-del { background: transparent; color: #dc2626; border: 1px solid #fca5a5; font-size: .78rem; padding: .3rem .65rem; border-radius: 6px; cursor: pointer; }
+    .btn-del:hover { background: #fef2f2; }
+
+    .empty { text-align: center; color: #aaa; padding: 2rem; font-size: .9rem; }
+    #toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: #1a1a2e; color: white; padding: .7rem 1.2rem; border-radius: 8px; font-size: .85rem; opacity: 0; transition: opacity .3s; pointer-events: none; }
+    #toast.show { opacity: 1; }
+    #no-event { text-align: center; color: #aaa; padding: 2rem; font-size: .9rem; }
+  </style>
+</head>
+<body>
+<header>
+  <a href="/">&#8592; Home</a>
+  <h1>Orders</h1>
+</header>
+
+<div style="max-width:960px;margin:1.5rem auto;padding:0 1rem">
+  <div class="card" style="margin-bottom:0">
+    <h2>Active Event</h2>
+    <select id="eventSelect" onchange="onEventChange()">
+      <option value="">-- Select an active event --</option>
+    </select>
+  </div>
+</div>
+
+<div class="container" id="mainContent" style="display:none">
+  <!-- Left: menu + past orders -->
+  <div>
+    <div class="card">
+      <h2>Menu</h2>
+      <div id="menuItems"></div>
+    </div>
+    <div class="card">
+      <h2>Past Orders</h2>
+      <div id="ordersList"></div>
+    </div>
+  </div>
+
+  <!-- Right: cart -->
+  <div class="cart-sticky">
+    <div class="card">
+      <h2>Current Order</h2>
+      <div class="cart-items" id="cartItems"><p class="cart-empty">No items added yet.</p></div>
+      <div class="cart-total"><span>Total</span><span id="cartTotal">$0.00</span></div>
+      <button class="btn-place" id="placeBtn" onclick="placeOrder()" disabled>Place Order</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  let cart = {}; // menuItemId -> { name, price, qty }
+  let menuData = [];
+  let selectedEventId = null;
+
+  async function init() {
+    const res = await fetch('/api/events');
+    const events = await res.json();
+    const active = events.filter(e => e.isActive);
+    const sel = document.getElementById('eventSelect');
+    active.forEach(e => {
+      const opt = document.createElement('option');
+      opt.value = e.id;
+      opt.textContent = `${e.eventName || 'Unnamed'} — ${formatDate(e.eventDate)}`;
+      sel.appendChild(opt);
+    });
+    if (active.length === 1) { sel.value = active[0].id; onEventChange(); }
+  }
+
+  async function onEventChange() {
+    selectedEventId = document.getElementById('eventSelect').value;
+    if (!selectedEventId) { document.getElementById('mainContent').style.display = 'none'; return; }
+    document.getElementById('mainContent').style.display = '';
+    cart = {};
+    await Promise.all([loadMenu(), loadOrders()]);
+    renderCart();
+  }
+
+  async function loadMenu() {
+    const res = await fetch('/api/menu');
+    menuData = (await res.json()).filter(m => m.isAvailable);
+    const groups = {};
+    menuData.forEach(m => { (groups[m.itemType] = groups[m.itemType] || []).push(m); });
+    document.getElementById('menuItems').innerHTML = Object.entries(groups).map(([type, items]) => `
+      <div class="type-group">
+        <div class="type-label">${esc(type)}</div>
+        ${items.map(m => `
+          <div class="menu-item" id="row-${m.id}">
+            <div class="info">
+              <div class="name">${esc(m.itemName)}</div>
+              <div class="price">$${m.itemCost.toFixed(2)}</div>
+            </div>
+            <div class="qty-ctrl">
+              <button class="qty-btn" onclick="adjustQty(${m.id}, -1)">&#8722;</button>
+              <span class="qty-num" id="qty-${m.id}">0</span>
+              <button class="qty-btn" onclick="adjustQty(${m.id}, 1)">+</button>
+            </div>
+          </div>`).join('')}
+      </div>`).join('');
+  }
+
+  function adjustQty(id, delta) {
+    const item = menuData.find(m => m.id === id);
+    if (!item) return;
+    const current = cart[id] ? cart[id].qty : 0;
+    const next = Math.max(0, current + delta);
+    if (next === 0) { delete cart[id]; }
+    else { cart[id] = { name: item.itemName, price: item.itemCost, qty: next }; }
+    document.getElementById('qty-' + id).textContent = next;
+    renderCart();
+  }
+
+  function renderCart() {
+    const entries = Object.entries(cart);
+    const cartEl = document.getElementById('cartItems');
+    if (!entries.length) {
+      cartEl.innerHTML = '<p class="cart-empty">No items added yet.</p>';
+      document.getElementById('cartTotal').textContent = '$0.00';
+      document.getElementById('placeBtn').disabled = true;
+      return;
+    }
+    let total = 0;
+    cartEl.innerHTML = entries.map(([id, item]) => {
+      const line = item.price * item.qty;
+      total += line;
+      return `<div class="cart-row">
+        <span>${esc(item.name)} x${item.qty}</span>
+        <span>$${line.toFixed(2)}</span>
+      </div>`;
+    }).join('');
+    document.getElementById('cartTotal').textContent = '$' + total.toFixed(2);
+    document.getElementById('placeBtn').disabled = false;
+  }
+
+  async function placeOrder() {
+    if (!selectedEventId || !Object.keys(cart).length) return;
+    document.getElementById('placeBtn').disabled = true;
+    const items = Object.entries(cart).map(([id, item]) => ({
+      menuItemId: parseInt(id),
+      quantity: item.qty,
+      priceAtTime: item.price,
+    }));
+    await fetch('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ eventId: parseInt(selectedEventId), items }),
+    });
+    cart = {};
+    menuData.forEach(m => { const el = document.getElementById('qty-' + m.id); if (el) el.textContent = '0'; });
+    renderCart();
+    await loadOrders();
+    toast('Order placed!');
+  }
+
+  async function loadOrders() {
+    const res = await fetch(`/api/orders?eventId=${selectedEventId}`);
+    const orders = await res.json();
+    const el = document.getElementById('ordersList');
+    if (!orders.length) { el.innerHTML = '<p class="empty">No orders yet.</p>'; return; }
+    el.innerHTML = orders.map(o => {
+      const total = o.items.reduce((s, i) => s + i.priceAtTime * i.quantity, 0);
+      return `<div class="order-card">
+        <div class="order-header">
+          <span class="order-id">Order #${o.id}</span>
+          <span class="order-time">${formatTime(o.created_at)}</span>
+        </div>
+        <div class="order-lines">
+          ${o.items.map(i => `
+            <div class="order-line">
+              <span>${esc(i.menu?.itemName || 'Item')} x${i.quantity}</span>
+              <span>$${(i.priceAtTime * i.quantity).toFixed(2)}</span>
+            </div>`).join('')}
+        </div>
+        <div class="order-footer">
+          <span class="order-total">$${total.toFixed(2)}</span>
+          <button class="btn-del" onclick="deleteOrder(${o.id})">Delete</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  async function deleteOrder(id) {
+    if (!confirm('Delete this order?')) return;
+    await fetch(`/api/orders/${id}`, { method: 'DELETE' });
+    toast('Order deleted');
+    loadOrders();
+  }
+
+  function formatDate(d) {
+    if (!d) return '';
+    const [y, m, day] = d.split('-');
+    return `${m}/${day}/${y}`;
+  }
+
+  function formatTime(ts) {
+    if (!ts) return '';
+    return new Date(ts).toLocaleString();
+  }
+
+  function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  init();
+</script>
+</body>
+</html>

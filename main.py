@@ -113,3 +113,57 @@ def delete_event(event_id: int):
     result = supabase.table("event").delete().eq("id", event_id).execute()
     if not result.data:
         raise HTTPException(status_code=404, detail="Event not found")
+
+
+# --- Orders ---
+
+class OrderItemIn(BaseModel):
+    menuItemId: int
+    quantity: int
+    priceAtTime: float
+
+
+class OrderIn(BaseModel):
+    eventId: int
+    items: list[OrderItemIn]
+
+
+@app.get("/orders", response_class=HTMLResponse)
+def orders_page():
+    with open("templates/orders.html", encoding="utf-8") as f:
+        return f.read()
+
+
+@app.get("/api/orders")
+def get_orders(eventId: int):
+    orders = supabase.table("orders").select("*").eq("eventId", eventId).order("created_at", desc=True).execute()
+    if not orders.data:
+        return []
+    order_ids = [o["id"] for o in orders.data]
+    items = supabase.table("orderItems").select("*, menu(itemName)").in_("orderId", order_ids).execute()
+    items_by_order: dict = {}
+    for item in items.data:
+        items_by_order.setdefault(item["orderId"], []).append(item)
+    for order in orders.data:
+        order["items"] = items_by_order.get(order["id"], [])
+    return orders.data
+
+
+@app.post("/api/orders", status_code=201)
+def create_order(order: OrderIn):
+    result = supabase.table("orders").insert({"eventId": order.eventId}).execute()
+    new_order = result.data[0]
+    order_items = [
+        {"orderId": new_order["id"], "menuItemId": i.menuItemId, "quantity": i.quantity, "priceAtTime": i.priceAtTime}
+        for i in order.items
+    ]
+    supabase.table("orderItems").insert(order_items).execute()
+    return new_order
+
+
+@app.delete("/api/orders/{order_id}", status_code=204)
+def delete_order(order_id: int):
+    supabase.table("orderItems").delete().eq("orderId", order_id).execute()
+    result = supabase.table("orders").delete().eq("id", order_id).execute()
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Order not found")
