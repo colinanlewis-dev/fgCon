@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#14532d" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Runners / Returns</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #f5f5f5; color: #222; }
+    header { background: #14532d; color: white; padding: 1.2rem 2rem; }
+    header a { color: #86efac; font-size: .85rem; text-decoration: none; display: block; margin-bottom: .4rem; }
+    header h1 { font-size: 1.4rem; font-weight: 600; }
+    .container { max-width: 860px; margin: 2rem auto; padding: 0 1rem; }
+
+    .card { background: white; border-radius: 10px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .card h2 { font-size: .75rem; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 1rem; }
+
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+    .form-grid .span2 { grid-column: span 2; }
+    .form-row-actions { display: flex; gap: .5rem; margin-top: .75rem; }
+
+    label { display: flex; flex-direction: column; gap: .3rem; font-size: .8rem; font-weight: 500; color: #555; }
+    input, select, textarea { padding: .55rem .75rem; border: 1px solid #ddd; border-radius: 6px; font-size: .95rem; width: 100%; font-family: inherit; }
+    textarea { resize: vertical; min-height: 72px; }
+    input:focus, select:focus, textarea:focus { outline: 2px solid #166534; border-color: transparent; }
+
+    button { padding: .55rem 1.2rem; border: none; border-radius: 6px; font-size: .9rem; font-weight: 600; cursor: pointer; white-space: nowrap; }
+    .btn-add    { background: #166534; color: white; }
+    .btn-add:hover { background: #14532d; }
+    .btn-save   { background: #059669; color: white; }
+    .btn-save:hover { background: #047857; }
+    .btn-cancel { background: #e5e7eb; color: #374151; }
+    .btn-cancel:hover { background: #d1d5db; }
+    .btn-del    { background: transparent; color: #dc2626; border: 1px solid #fca5a5; font-size: .8rem; padding: .35rem .7rem; }
+    .btn-del:hover { background: #fef2f2; }
+    .btn-edit   { background: transparent; color: #166534; border: 1px solid #86efac; font-size: .8rem; padding: .35rem .7rem; }
+    .btn-edit:hover { background: #f0fdf4; }
+
+    /* Filter bar */
+    .filter-bar { display: flex; align-items: center; gap: .75rem; margin-bottom: 1rem; }
+    .filter-bar label { flex-direction: row; align-items: center; gap: .5rem; font-size: .85rem; font-weight: 600; color: #555; white-space: nowrap; }
+    .filter-bar select { width: auto; min-width: 200px; }
+
+    /* Summary bar */
+    .summary-bar { display: flex; gap: 1rem; margin-bottom: 1rem; }
+    .summary-pill { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: .5rem 1rem; font-size: .85rem; }
+    .summary-pill span { font-weight: 700; color: #166534; }
+
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; font-size: .75rem; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: .05em; padding: .5rem .75rem; border-bottom: 2px solid #f0f0f0; }
+    td { padding: .65rem .75rem; border-bottom: 1px solid #f5f5f5; font-size: .9rem; vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:not(.editing-row):hover td { background: #fafafa; }
+    .editing-row td { background: #f0fdf4; padding: .5rem .75rem; }
+    .editing-row input, .editing-row select, .editing-row textarea { padding: .38rem .55rem; font-size: .88rem; }
+    .actions { display: flex; gap: .4rem; }
+    .badge { display: inline-block; padding: .2rem .6rem; border-radius: 99px; font-size: .75rem; font-weight: 600; background: #dcfce7; color: #166534; }
+    .items-cell { max-width: 260px; white-space: pre-wrap; font-size: .85rem; color: #374151; }
+    .empty { text-align: center; color: #aaa; padding: 2rem; font-size: .9rem; }
+
+    #toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: #14532d; color: white; padding: .7rem 1.2rem; border-radius: 8px; font-size: .85rem; opacity: 0; transition: opacity .3s; pointer-events: none; }
+    #toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+<header>
+  <a href="/">&#8592; Home</a>
+  <h1>Runners / Returns</h1>
+</header>
+
+<div class="container">
+
+  <!-- Add form -->
+  <div class="card">
+    <h2>Log a Run</h2>
+    <form id="addForm">
+      <div class="form-grid">
+        <label>Event <select id="addEvent" required>
+          <option value="">Select event…</option>
+        </select></label>
+        <label>Cost ($) <input id="addCost" type="number" min="0" step="0.01" placeholder="0.00" /></label>
+        <label class="span2">Items / Notes <textarea id="addItems" placeholder="e.g. 2 bags of ice, extra hot dogs…"></textarea></label>
+      </div>
+      <div class="form-row-actions">
+        <button type="submit" class="btn-add">+ Log Run</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Table -->
+  <div class="card">
+    <h2>Run History</h2>
+    <div class="filter-bar">
+      <label>Filter by Event: <select id="filterEvent" onchange="applyFilter()">
+        <option value="">All Events</option>
+      </select></label>
+    </div>
+    <div class="summary-bar" id="summaryBar" style="display:none">
+      <div class="summary-pill">Runs: <span id="summaryCount">0</span></div>
+      <div class="summary-pill">Total Cost: <span id="summaryTotal">$0.00</span></div>
+    </div>
+    <table>
+      <thead>
+        <tr><th>Event</th><th>Items / Notes</th><th>Cost</th><th></th></tr>
+      </thead>
+      <tbody id="runnerBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  let allRunners = [];
+  let allEvents = [];
+  let editingId = null;
+
+  async function init() {
+    const [evRes, runRes] = await Promise.all([
+      fetch('/api/events').then(r => r.json()),
+      fetch('/api/runners').then(r => r.json()),
+    ]);
+    allEvents = evRes;
+    allRunners = runRes;
+
+    const eventOptions = allEvents.map(e =>
+      `<option value="${e.id}">${esc(e.eventName || 'Unnamed')} — ${formatDate(e.eventDate)}</option>`
+    ).join('');
+    document.getElementById('addEvent').innerHTML = '<option value="">Select event…</option>' + eventOptions;
+    document.getElementById('filterEvent').innerHTML = '<option value="">All Events</option>' + eventOptions;
+
+    // Default filter to active event if one exists
+    const active = allEvents.find(e => e.isActive);
+    if (active) {
+      document.getElementById('addEvent').value = active.id;
+      document.getElementById('filterEvent').value = active.id;
+    }
+
+    renderTable();
+  }
+
+  function applyFilter() {
+    editingId = null;
+    renderTable();
+  }
+
+  function renderTable() {
+    const filterVal = document.getElementById('filterEvent').value;
+    const rows = filterVal ? allRunners.filter(r => String(r.eventId) === filterVal) : allRunners;
+
+    // Summary
+    const summaryBar = document.getElementById('summaryBar');
+    if (rows.length) {
+      const total = rows.reduce((s, r) => s + (r.runnerCost || 0), 0);
+      document.getElementById('summaryCount').textContent = rows.length;
+      document.getElementById('summaryTotal').textContent = '$' + total.toFixed(2);
+      summaryBar.style.display = 'flex';
+    } else {
+      summaryBar.style.display = 'none';
+    }
+
+    const tbody = document.getElementById('runnerBody');
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="4" class="empty">No runs logged yet.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = rows.map(r => {
+      const eventLabel = r.event ? esc(r.event.eventName || 'Unnamed') + ' — ' + formatDate(r.event.eventDate) : '—';
+      if (r.id === editingId) {
+        const eventOpts = allEvents.map(e =>
+          `<option value="${e.id}" ${e.id === r.eventId ? 'selected' : ''}>${esc(e.eventName || 'Unnamed')} — ${formatDate(e.eventDate)}</option>`
+        ).join('');
+        return `
+        <tr class="editing-row">
+          <td><select id="inline-event">${eventOpts}</select></td>
+          <td><textarea id="inline-items" rows="2" style="min-width:200px">${esc(r.runnerItems || '')}</textarea></td>
+          <td><input id="inline-cost" type="number" min="0" step="0.01" value="${r.runnerCost ?? ''}" style="width:90px" /></td>
+          <td><div class="actions">
+            <button class="btn-save" style="padding:.35rem .7rem;font-size:.8rem" onclick="saveEdit(${r.id})">Save</button>
+            <button class="btn-cancel" style="padding:.35rem .7rem;font-size:.8rem" onclick="cancelEdit()">Cancel</button>
+          </div></td>
+        </tr>`;
+      }
+      return `
+      <tr id="row-${r.id}">
+        <td><span class="badge">${esc(eventLabel)}</span></td>
+        <td class="items-cell">${esc(r.runnerItems || '—')}</td>
+        <td>${r.runnerCost != null ? '$' + parseFloat(r.runnerCost).toFixed(2) : '—'}</td>
+        <td><div class="actions">
+          <button class="btn-edit" onclick="startEdit(${r.id})">Edit</button>
+          <button class="btn-del"  onclick="deleteRunner(${r.id})">Delete</button>
+        </div></td>
+      </tr>`;
+    }).join('');
+
+    if (editingId) {
+      const el = document.getElementById('inline-items');
+      if (el) el.focus();
+    }
+  }
+
+  document.getElementById('addForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const eventId = document.getElementById('addEvent').value;
+    const cost    = document.getElementById('addCost').value;
+    if (!eventId) { toast('Please select an event'); return; }
+    await fetch('/api/runners', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        eventId: parseInt(eventId),
+        runnerItems: document.getElementById('addItems').value || null,
+        runnerCost:  cost ? parseFloat(cost) : null,
+      }),
+    });
+    document.getElementById('addItems').value = '';
+    document.getElementById('addCost').value  = '';
+    toast('Run logged');
+    await refreshRunners();
+  });
+
+  function startEdit(id) {
+    editingId = id;
+    renderTable();
+  }
+
+  function cancelEdit() {
+    editingId = null;
+    renderTable();
+  }
+
+  async function saveEdit(id) {
+    const eventId = document.getElementById('inline-event').value;
+    const cost    = document.getElementById('inline-cost').value;
+    await fetch(`/api/runners/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        eventId:     parseInt(eventId),
+        runnerItems: document.getElementById('inline-items').value || null,
+        runnerCost:  cost ? parseFloat(cost) : null,
+      }),
+    });
+    editingId = null;
+    toast('Run updated');
+    await refreshRunners();
+  }
+
+  async function deleteRunner(id) {
+    if (!confirm('Delete this run entry?')) return;
+    await fetch(`/api/runners/${id}`, { method: 'DELETE' });
+    toast('Run deleted');
+    await refreshRunners();
+  }
+
+  async function refreshRunners() {
+    allRunners = await fetch('/api/runners').then(r => r.json());
+    renderTable();
+  }
+
+  function formatDate(d) {
+    if (!d) return '—';
+    const [y, m, day] = d.split('-');
+    return `${m}/${day}/${y}`;
+  }
+
+  function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  init();
+</script>
+<div id="offlineBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#dc2626;color:white;text-align:center;padding:.6rem 1rem;font-size:.85rem;font-weight:600;z-index:999">&#x26A0;&#xFE0F; You're offline — some features may be unavailable</div>
+<script>
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+  function _updateOnline() { document.getElementById('offlineBanner').style.display = navigator.onLine ? 'none' : ''; }
+  window.addEventListener('online', _updateOnline);
+  window.addEventListener('offline', _updateOnline);
+  _updateOnline();
+</script>
+</body>
+</html>

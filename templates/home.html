@@ -1,14 +1,20 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>fgCon</title>
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#14532d" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Farmington Glen Concessions</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: system-ui, sans-serif; background: #f5f5f5; color: #222; }
-    header { background: #1a1a2e; color: white; padding: 1.2rem 2rem; }
+    header { background: #14532d; color: white; padding: 1.2rem 2rem; display: flex; align-items: center; justify-content: space-between; }
     header h1 { font-size: 1.4rem; font-weight: 600; }
+    .btn-logout { background: transparent; border: 1px solid rgba(255,255,255,.35); color: rgba(255,255,255,.8); border-radius: 6px; padding: .35rem .85rem; font-size: .8rem; cursor: pointer; }
+    .btn-logout:hover { background: rgba(255,255,255,.1); color: white; }
     .container { max-width: 860px; margin: 2rem auto; padding: 0 1rem; }
     h2 { font-size: .75rem; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 1rem; }
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }
@@ -38,13 +44,39 @@
     .card.disabled:hover { box-shadow: none; transform: none; }
     .card .hint { font-size: .78rem; color: #e57c00; margin-top: .25rem; display: none; }
     .card.disabled .hint { display: block; }
+    .season-banner { background: #fefce8; border-bottom: 1px solid #fde68a; padding: .75rem 2rem; display: flex; align-items: center; justify-content: center; gap: 1rem; }
+    .season-banner img { height: 80px; object-fit: contain; }
+    .season-banner .banner-text { font-size: .85rem; color: #78716c; font-style: italic; }
   </style>
 </head>
 <body>
-<header><h1>fgCon</h1></header>
+<header>
+  <h1>Farmington Glen Concessions</h1>
+  <button class="btn-logout" onclick="logout()">Sign out</button>
+</header>
+
+<div class="season-banner">
+  <img src="/static/glemons.png" alt="The Glemons" />
+  <span class="banner-text">2026 Season &mdash; The Glemons</span>
+</div>
 
 <div class="container">
-  <h2>Management</h2>
+  <h2 style="margin-bottom:1rem">Meet Tools</h2>
+  <div class="grid" style="margin-bottom:2rem">
+    <a class="card" id="ordersCard" href="/orders">
+      <span class="icon">&#x1F9FE;</span>
+      <span class="title">Orders</span>
+      <span class="desc">Build and complete orders for an event</span>
+      <span class="hint">&#x26A0;&#xFE0F; No active event &mdash; set one in Event Manager first</span>
+    </a>
+    <a class="card" href="/runners">
+      <span class="icon">&#x1F3C3;</span>
+      <span class="title">Runners / Returns</span>
+      <span class="desc">Track runs made for supplies and their costs</span>
+    </a>
+  </div>
+
+  <h2 style="margin-bottom:1rem">Meet Management</h2>
   <div class="grid">
     <a class="card" href="/menu">
       <span class="icon">&#x1F37D;</span>
@@ -61,11 +93,10 @@
       <span class="title">Combo Manager</span>
       <span class="desc">Create and manage combo meal settings</span>
     </a>
-    <a class="card" id="ordersCard" href="/orders">
-      <span class="icon">&#x1F9FE;</span>
-      <span class="title">Orders</span>
-      <span class="desc">Build and complete orders for an event</span>
-      <span class="hint">&#x26A0;&#xFE0F; No active event &mdash; set one in Event Manager first</span>
+    <a class="card" href="/reports">
+      <span class="icon">&#x1F4CA;</span>
+      <span class="title">Reports</span>
+      <span class="desc">Event breakdowns and season-wide trends</span>
     </a>
   </div>
 </div>
@@ -76,6 +107,19 @@
     .then(event => {
       if (!event) document.getElementById('ordersCard').classList.add('disabled');
     });
+
+  async function logout() {
+    await fetch('/api/logout', { method: 'POST' });
+    location.href = '/login';
+  }
+</script>
+<div id="offlineBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#dc2626;color:white;text-align:center;padding:.6rem 1rem;font-size:.85rem;font-weight:600;z-index:999">&#x26A0;&#xFE0F; You're offline — some features may be unavailable</div>
+<script>
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+  function _updateOnline() { document.getElementById('offlineBanner').style.display = navigator.onLine ? 'none' : ''; }
+  window.addEventListener('online', _updateOnline);
+  window.addEventListener('offline', _updateOnline);
+  _updateOnline();
 </script>
 </body>
 </html>

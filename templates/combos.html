@@ -1,14 +1,18 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#14532d" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Combo Manager</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: system-ui, sans-serif; background: #f5f5f5; color: #222; }
-    header { background: #1a1a2e; color: white; padding: 1.2rem 2rem; }
-    header a { color: #a5b4fc; font-size: .85rem; text-decoration: none; display: block; margin-bottom: .4rem; }
+    header { background: #14532d; color: white; padding: 1.2rem 2rem; }
+    header a { color: #86efac; font-size: .85rem; text-decoration: none; display: block; margin-bottom: .4rem; }
     header h1 { font-size: 1.4rem; font-weight: 600; }
     .container { max-width: 860px; margin: 2rem auto; padding: 0 1rem; }
 
@@ -18,17 +22,17 @@
     form { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: .75rem; align-items: end; }
     label { display: flex; flex-direction: column; gap: .3rem; font-size: .8rem; font-weight: 500; color: #555; }
     input { padding: .55rem .75rem; border: 1px solid #ddd; border-radius: 6px; font-size: .95rem; width: 100%; }
-    input:focus { outline: 2px solid #4f46e5; border-color: transparent; }
+    input:focus { outline: 2px solid #166534; border-color: transparent; }
     button { padding: .55rem 1.2rem; border: none; border-radius: 6px; font-size: .9rem; font-weight: 600; cursor: pointer; white-space: nowrap; }
-    .btn-add    { background: #4f46e5; color: white; }
-    .btn-add:hover { background: #4338ca; }
+    .btn-add    { background: #166534; color: white; }
+    .btn-add:hover { background: #14532d; }
     .btn-save   { background: #059669; color: white; }
     .btn-save:hover { background: #047857; }
     .btn-cancel { background: #e5e7eb; color: #374151; }
     .btn-del    { background: transparent; color: #dc2626; border: 1px solid #fca5a5; font-size: .8rem; padding: .35rem .7rem; }
     .btn-del:hover { background: #fef2f2; }
-    .btn-edit   { background: transparent; color: #4f46e5; border: 1px solid #a5b4fc; font-size: .8rem; padding: .35rem .7rem; }
-    .btn-edit:hover { background: #eef2ff; }
+    .btn-edit   { background: transparent; color: #166534; border: 1px solid #86efac; font-size: .8rem; padding: .35rem .7rem; }
+    .btn-edit:hover { background: #f0fdf4; }
 
     table { width: 100%; border-collapse: collapse; }
     th { text-align: left; font-size: .75rem; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: .05em; padding: .5rem .75rem; border-bottom: 2px solid #f0f0f0; }
@@ -38,7 +42,7 @@
     .actions { display: flex; gap: .4rem; }
     .empty { text-align: center; color: #aaa; padding: 2rem; font-size: .9rem; }
 
-    #toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: #1a1a2e; color: white; padding: .7rem 1.2rem; border-radius: 8px; font-size: .85rem; opacity: 0; transition: opacity .3s; pointer-events: none; }
+    #toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: #14532d; color: white; padding: .7rem 1.2rem; border-radius: 8px; font-size: .85rem; opacity: 0; transition: opacity .3s; pointer-events: none; }
     #toast.show { opacity: 1; }
   </style>
 </head>
@@ -180,6 +184,14 @@
   }
 
   load();
+</script>
+<div id="offlineBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#dc2626;color:white;text-align:center;padding:.6rem 1rem;font-size:.85rem;font-weight:600;z-index:999">&#x26A0;&#xFE0F; You're offline — some features may be unavailable</div>
+<script>
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+  function _updateOnline() { document.getElementById('offlineBanner').style.display = navigator.onLine ? 'none' : ''; }
+  window.addEventListener('online', _updateOnline);
+  window.addEventListener('offline', _updateOnline);
+  _updateOnline();
 </script>
 </body>
 </html>

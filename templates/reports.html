@@ -1,0 +1,508 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/weather-icons/2.0.10/css/weather-icons.min.css" />
+  <meta name="theme-color" content="#14532d" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Reports</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #f5f5f5; color: #222; }
+    header { background: #14532d; color: white; padding: 1.2rem 2rem; }
+    header a { color: #86efac; font-size: .85rem; text-decoration: none; display: block; margin-bottom: .4rem; }
+    header h1 { font-size: 1.4rem; font-weight: 600; }
+    .container { max-width: 960px; margin: 2rem auto; padding: 0 1rem; }
+
+    /* Mode tiles */
+    .mode-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 2rem; }
+    .mode-tile { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,.08); cursor: pointer; border: 2px solid transparent; transition: all .15s; display: flex; flex-direction: column; gap: .4rem; }
+    .mode-tile:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.12); }
+    .mode-tile.active { border-color: #166534; background: #f0fdf4; }
+    .mode-tile .mt-icon { font-size: 2rem; }
+    .mode-tile .mt-title { font-weight: 700; font-size: 1rem; }
+    .mode-tile .mt-desc { font-size: .82rem; color: #777; }
+
+    /* Controls */
+    .controls { background: white; border-radius: 10px; padding: 1.25rem 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,.08); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem; }
+    .controls label { font-size: .85rem; font-weight: 600; color: #555; white-space: nowrap; }
+    .controls select { padding: .5rem .75rem; border: 1px solid #ddd; border-radius: 6px; font-size: .95rem; flex: 1; max-width: 340px; }
+    .controls select:focus { outline: 2px solid #166534; border-color: transparent; }
+    .btn-run { padding: .5rem 1.2rem; background: #166534; color: white; border: none; border-radius: 6px; font-size: .9rem; font-weight: 600; cursor: pointer; white-space: nowrap; }
+    .btn-run:hover { background: #14532d; }
+
+    /* Report body */
+    #reportBody { display: none; }
+
+    /* Stat cards */
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: .9rem; margin-bottom: 1.5rem; }
+    .stat-card { background: white; border-radius: 10px; padding: 1.1rem 1.2rem; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+    .stat-card .sc-label { font-size: .72rem; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: .05em; margin-bottom: .3rem; }
+    .stat-card .sc-value { font-size: 1.6rem; font-weight: 700; color: #1f2937; line-height: 1.1; }
+    .stat-card .sc-sub { font-size: .75rem; color: #6b7280; margin-top: .2rem; }
+
+    /* Charts */
+    .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+    @media (max-width: 640px) { .chart-grid { grid-template-columns: 1fr; } .mode-grid { grid-template-columns: 1fr; } }
+    .chart-card { background: white; border-radius: 10px; padding: 1.25rem; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+    .chart-card.wide { grid-column: 1 / -1; }
+    .chart-card h3 { font-size: .75rem; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 1rem; }
+    .chart-wrap { position: relative; height: 220px; }
+    .chart-wrap.tall { height: 280px; }
+
+    /* Table */
+    .table-card { background: white; border-radius: 10px; padding: 1.25rem; box-shadow: 0 1px 4px rgba(0,0,0,.08); margin-bottom: 1.5rem; }
+    .table-card h3 { font-size: .75rem; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 1rem; }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; font-size: .72rem; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: .05em; padding: .5rem .75rem; border-bottom: 2px solid #f0f0f0; }
+    td { padding: .65rem .75rem; border-bottom: 1px solid #f5f5f5; font-size: .88rem; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafafa; }
+    .rank { font-weight: 700; color: #9ca3af; }
+    .badge { display: inline-block; padding: .15rem .55rem; border-radius: 99px; font-size: .72rem; font-weight: 600; background: #dcfce7; color: #166534; }
+
+    .pm-row { display: flex; justify-content: space-between; align-items: center; padding: .6rem 0; border-bottom: 1px solid #f5f5f5; }
+    .pm-row:last-child { border-bottom: none; }
+    .pm-name { font-weight: 600; font-size: .9rem; display: flex; align-items: center; gap: .5rem; }
+    .pm-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .pm-stats { text-align: right; }
+    .pm-revenue { font-weight: 700; font-size: .95rem; color: #1f2937; }
+    .pm-count { font-size: .75rem; color: #9ca3af; }
+    .empty { text-align: center; color: #aaa; padding: 3rem; font-size: .9rem; }
+    #toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: #14532d; color: white; padding: .7rem 1.2rem; border-radius: 8px; font-size: .85rem; opacity: 0; transition: opacity .3s; pointer-events: none; }
+    #toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+<header>
+  <a href="/">&#8592; Home</a>
+  <h1>Reports</h1>
+</header>
+
+<div class="container">
+
+  <!-- Mode tiles -->
+  <div class="mode-grid">
+    <div class="mode-tile" id="tileEvent" onclick="setMode('event')">
+      <span class="mt-icon">&#x1F4CB;</span>
+      <span class="mt-title">Event Report</span>
+      <span class="mt-desc">Deep-dive into a single event — revenue, top items, payment split, and order breakdown</span>
+    </div>
+    <div class="mode-tile" id="tileSeason" onclick="setMode('season')">
+      <span class="mt-icon">&#x1F4C6;</span>
+      <span class="mt-title">Season Report</span>
+      <span class="mt-desc">Year-wide trends — revenue by event, top sellers across the season, and totals</span>
+    </div>
+    <div class="mode-tile" id="tileVip" onclick="setMode('vip')">
+      <span class="mt-icon">&#x1F31F;</span>
+      <span class="mt-title">VIP Report</span>
+      <span class="mt-desc">List all VIP orders for an event by team — track which coaches received food</span>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls" id="controls" style="display:none">
+    <label id="ctrlLabel">Select:</label>
+    <select id="ctrlSelect"><option value="">—</option></select>
+    <button class="btn-run" onclick="runReport()">Run Report</button>
+  </div>
+
+  <!-- Report output -->
+  <div id="reportBody"></div>
+
+</div>
+<div id="toast"></div>
+
+<script>
+  let mode = null;
+  let events = [];
+  let charts = [];
+
+  async function init() {
+    const res = await fetch('/api/events');
+    events = await res.json();
+  }
+
+  function setMode(m) {
+    mode = m;
+    document.getElementById('tileEvent').classList.toggle('active', m === 'event');
+    document.getElementById('tileSeason').classList.toggle('active', m === 'season');
+    document.getElementById('tileVip').classList.toggle('active', m === 'vip');
+    document.getElementById('reportBody').style.display = 'none';
+    document.getElementById('reportBody').innerHTML = '';
+    destroyCharts();
+
+    const ctrl = document.getElementById('controls');
+    const label = document.getElementById('ctrlLabel');
+    const sel = document.getElementById('ctrlSelect');
+    ctrl.style.display = 'flex';
+
+    if (m === 'season') {
+      label.textContent = 'Season (Year):';
+      const years = [...new Set(events.map(e => e.eventDate.slice(0, 4)))].sort().reverse();
+      const currentYear = new Date().getFullYear().toString();
+      sel.innerHTML = '<option value="">Select a year…</option>' +
+        years.map(y => `<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}</option>`).join('');
+    } else {
+      label.textContent = 'Event:';
+      sel.innerHTML = '<option value="">Select an event…</option>' +
+        events.map(e => `<option value="${e.id}">${esc(e.eventName || 'Unnamed')} — ${formatDate(e.eventDate)}</option>`).join('');
+    }
+  }
+
+  async function runReport() {
+    const val = document.getElementById('ctrlSelect').value;
+    if (!val) { toast('Please make a selection first'); return; }
+    destroyCharts();
+    document.getElementById('reportBody').innerHTML = '<p class="empty">Loading…</p>';
+    document.getElementById('reportBody').style.display = 'block';
+
+    if (mode === 'event') {
+      const data = await fetch(`/api/reports/event/${val}`).then(r => r.json());
+      renderEventReport(data);
+    } else if (mode === 'vip') {
+      const data = await fetch(`/api/reports/vip/${val}`).then(r => r.json());
+      renderVipReport(data);
+    } else {
+      const data = await fetch(`/api/reports/season/${val}`).then(r => r.json());
+      renderSeasonReport(data);
+    }
+  }
+
+  const WEATHER_ICONS = {
+    'clear sky':        'wi-day-sunny',
+    'mostly clear':     'wi-day-sunny-overcast',
+    'partly cloudy':    'wi-day-cloudy',
+    'overcast':         'wi-cloudy',
+    'foggy':            'wi-fog',
+    'light drizzle':    'wi-sprinkle',
+    'drizzle':          'wi-sprinkle',
+    'heavy drizzle':    'wi-showers',
+    'light rain':       'wi-rain-mix',
+    'rain':             'wi-rain',
+    'heavy rain':       'wi-rain-wind',
+    'light snow':       'wi-snow',
+    'snow':             'wi-snow',
+    'heavy snow':       'wi-snow-wind',
+    'snow grains':      'wi-snow',
+    'light showers':    'wi-showers',
+    'showers':          'wi-showers',
+    'heavy showers':    'wi-storm-showers',
+    'snow showers':     'wi-snow',
+    'heavy snow showers': 'wi-snow-wind',
+    'thunderstorm':     'wi-thunderstorm',
+    'thunderstorm w/ hail': 'wi-hail',
+  };
+  function weatherIcon(condition) {
+    if (!condition) return '';
+    const lower = condition.toLowerCase();
+    const key = Object.keys(WEATHER_ICONS).find(k => lower.includes(k)) || null;
+    const cls = key ? WEATHER_ICONS[key] : 'wi-na';
+    return `<i class="wi ${cls}" style="font-size:1.25rem;vertical-align:middle;margin-right:.4rem;color:#4b5563"></i>`;
+  }
+
+  // ── EVENT REPORT ──────────────────────────────────────────────
+
+  function renderEventReport(d) {
+    const s = d.summary;
+    const ev = d.event;
+    const avgOrder = s.orderCount ? s.totalRevenue / s.orderCount : 0;
+    const comboRate = s.orderCount ? Math.round(s.comboOrders / s.orderCount * 100) : 0;
+    const vipRate   = s.orderCount ? Math.round(s.vipOrders / s.orderCount * 100) : 0;
+
+    const cashboxColor = s.cashboxTotal >= 0 ? '#166534' : '#dc2626';
+    const weatherHtml = ev.meetWeather
+      ? `<div style="margin-bottom:1rem;font-size:.9rem;color:#4b5563">${weatherIcon(ev.meetWeather)}${esc(ev.meetWeather)}</div>`
+      : '';
+    document.getElementById('reportBody').innerHTML = `
+      ${weatherHtml}
+      <div class="stat-grid">
+        <div class="stat-card"><div class="sc-label">Total Revenue</div><div class="sc-value">$${s.totalRevenue.toFixed(2)}</div></div>
+        <div class="stat-card"><div class="sc-label">Orders</div><div class="sc-value">${s.orderCount}</div></div>
+        <div class="stat-card"><div class="sc-label">Avg Order</div><div class="sc-value">$${avgOrder.toFixed(2)}</div></div>
+        <div class="stat-card"><div class="sc-label">Combos Used</div><div class="sc-value">${s.comboOrders}</div><div class="sc-sub">${comboRate}% of orders</div></div>
+        <div class="stat-card" style="border-left:3px solid ${cashboxColor}">
+          <div class="sc-label">Cashbox Total</div>
+          <div class="sc-value" style="color:${cashboxColor}">$${s.cashboxTotal.toFixed(2)}</div>
+          <div class="sc-sub">Cash $${s.cashRevenue.toFixed(2)} + Seed $${s.seedMoney.toFixed(2)} − Runs $${s.runnerTotal.toFixed(2)}</div>
+        </div>
+      </div>
+
+      <div class="chart-grid">
+        <div class="chart-card">
+          <h3>Revenue by Item Type</h3>
+          <div class="chart-wrap"><canvas id="chartType"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <h3>Payment Method</h3>
+          <div id="pmBreakdownEvent"></div>
+        </div>
+        <div class="chart-card wide">
+          <h3>Top Items by Revenue</h3>
+          <div class="chart-wrap tall"><canvas id="chartItems"></canvas></div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <h3>Item Breakdown</h3>
+        <table>
+          <thead><tr><th>#</th><th>Item</th><th>Type</th><th>Qty Sold</th><th>Revenue</th><th>Avg Price</th></tr></thead>
+          <tbody>
+            ${d.itemBreakdown.map((item, i) => `
+              <tr>
+                <td class="rank">${i + 1}</td>
+                <td>${esc(item.name)}</td>
+                <td><span class="badge">${esc(item.type)}</span></td>
+                <td>${item.qty}</td>
+                <td>$${item.revenue.toFixed(2)}</td>
+                <td>$${(item.revenue / item.qty).toFixed(2)}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`;
+
+    // Type donut
+    const typeLabels = Object.keys(d.typeBreakdown);
+    const typeRevenues = typeLabels.map(t => d.typeBreakdown[t].revenue);
+    charts.push(new Chart(document.getElementById('chartType'), {
+      type: 'doughnut',
+      data: { labels: typeLabels, datasets: [{ data: typeRevenues, backgroundColor: ['#ea580c','#16a34a','#7c3aed','#0284c7','#d97706','#db2777'] }] },
+      options: { plugins: { legend: { position: 'right' } }, maintainAspectRatio: false }
+    }));
+
+    // Payment breakdown
+    document.getElementById('pmBreakdownEvent').innerHTML = renderPaymentBreakdown(s.paymentBreakdown);
+
+    // Top items bar
+    const top = d.itemBreakdown.slice(0, 10);
+    charts.push(new Chart(document.getElementById('chartItems'), {
+      type: 'bar',
+      data: {
+        labels: top.map(i => i.name),
+        datasets: [{ label: 'Revenue ($)', data: top.map(i => +i.revenue.toFixed(2)), backgroundColor: '#166534' }]
+      },
+      options: { indexAxis: 'y', plugins: { legend: { display: false } }, maintainAspectRatio: false,
+        scales: { x: { ticks: { callback: v => '$' + v } } } }
+    }));
+  }
+
+  // ── VIP REPORT ────────────────────────────────────────────────
+
+  function renderVipReport(d) {
+    const orders = d.orders;
+    const home = orders.filter(o => o.vipTeam === 'Home');
+    const away = orders.filter(o => o.vipTeam === 'Away');
+
+    if (!orders.length) {
+      document.getElementById('reportBody').innerHTML = `
+        <div class="table-card"><p class="empty">No VIP orders found for this event.</p></div>`;
+      return;
+    }
+
+    function teamTable(rows, team, color) {
+      if (!rows.length) return '';
+      return `
+        <div class="table-card">
+          <h3 style="color:${color}">${team === 'Home' ? '🏠' : '🛣️'} ${team} Team — ${rows.length} order${rows.length !== 1 ? 's' : ''}</h3>
+          <table>
+            <thead><tr><th>#</th><th>Coach / Note</th><th>Items</th></tr></thead>
+            <tbody>
+              ${rows.map((o, i) => `
+                <tr>
+                  <td class="rank">${i + 1}</td>
+                  <td>${o.vipNote ? esc(o.vipNote) : '<span style="color:#bbb">—</span>'}</td>
+                  <td style="color:#6b7280;font-size:.85rem">${esc(o.items) || '<span style="color:#bbb">—</span>'}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>`;
+    }
+
+    document.getElementById('reportBody').innerHTML = `
+      <div class="stat-grid">
+        <div class="stat-card"><div class="sc-label">Total VIP Orders</div><div class="sc-value">${orders.length}</div></div>
+        <div class="stat-card"><div class="sc-label">Home Team</div><div class="sc-value">${home.length}</div></div>
+        <div class="stat-card"><div class="sc-label">Away Team</div><div class="sc-value">${away.length}</div></div>
+      </div>
+      ${teamTable(home, 'Home', '#166534')}
+      ${teamTable(away, 'Away', '#0284c7')}`;
+  }
+
+  // ── SEASON REPORT ─────────────────────────────────────────────
+
+  function renderSeasonReport(d) {
+    const s = d.summary;
+    const avgPerEvent = s.eventCount ? s.totalRevenue / s.eventCount : 0;
+    const avgPerOrder = s.totalOrders ? s.totalRevenue / s.totalOrders : 0;
+    const comboRate   = s.totalOrders ? Math.round(s.comboOrders / s.totalOrders * 100) : 0;
+    const vipRate     = s.totalOrders ? Math.round(s.vipOrders / s.totalOrders * 100) : 0;
+
+    if (!s.eventCount) {
+      document.getElementById('reportBody').innerHTML = '<p class="empty">No events found for this season.</p>';
+      return;
+    }
+
+    document.getElementById('reportBody').innerHTML = `
+      <div class="stat-grid">
+        <div class="stat-card"><div class="sc-label">Season Revenue</div><div class="sc-value">$${s.totalRevenue.toFixed(2)}</div></div>
+        <div class="stat-card" style="border-left:3px solid ${s.totalProfit >= 0 ? '#166534' : '#dc2626'}">
+          <div class="sc-label">Total Profit</div>
+          <div class="sc-value" style="color:${s.totalProfit >= 0 ? '#166534' : '#dc2626'}">$${s.totalProfit.toFixed(2)}</div>
+          <div class="sc-sub">Revenue − Meet Costs ($${s.totalMeetCost.toFixed(2)}) − Runs ($${s.totalRunnerCost.toFixed(2)})</div>
+        </div>
+        <div class="stat-card"><div class="sc-label">Events</div><div class="sc-value">${s.eventCount}</div></div>
+        <div class="stat-card"><div class="sc-label">Total Orders</div><div class="sc-value">${s.totalOrders}</div></div>
+        <div class="stat-card"><div class="sc-label">Avg / Event</div><div class="sc-value">$${avgPerEvent.toFixed(2)}</div></div>
+        <div class="stat-card"><div class="sc-label">Avg Order</div><div class="sc-value">$${avgPerOrder.toFixed(2)}</div></div>
+        <div class="stat-card"><div class="sc-label">VIP Rate</div><div class="sc-value">${vipRate}%</div><div class="sc-sub">${s.vipOrders} orders</div></div>
+        <div class="stat-card"><div class="sc-label">Combo Rate</div><div class="sc-value">${comboRate}%</div><div class="sc-sub">${s.comboOrders} orders</div></div>
+      </div>
+
+      <div class="chart-grid">
+        <div class="chart-card wide">
+          <h3>Revenue by Event</h3>
+          <div class="chart-wrap tall"><canvas id="chartEventRev"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <h3>Orders by Event</h3>
+          <div class="chart-wrap"><canvas id="chartEventOrders"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <h3>Payment Method</h3>
+          <div id="pmBreakdownSeason"></div>
+        </div>
+        <div class="chart-card wide">
+          <h3>Top 10 Items (Season)</h3>
+          <div class="chart-wrap tall"><canvas id="chartTopItems"></canvas></div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <h3>Event Breakdown</h3>
+        <table>
+          <thead><tr><th>Event</th><th>Date</th><th>Orders</th><th>Revenue</th><th>Avg Order</th></tr></thead>
+          <tbody>
+            ${d.events.map(ev => `
+              <tr>
+                <td>${esc(ev.eventName || 'Unnamed')}</td>
+                <td>${formatDate(ev.eventDate)}</td>
+                <td>${ev.orderCount}</td>
+                <td>$${ev.revenue.toFixed(2)}</td>
+                <td>$${ev.orderCount ? (ev.revenue / ev.orderCount).toFixed(2) : '0.00'}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-card">
+        <h3>Top Items (Season)</h3>
+        <table>
+          <thead><tr><th>#</th><th>Item</th><th>Type</th><th>Qty Sold</th><th>Revenue</th></tr></thead>
+          <tbody>
+            ${d.topItems.map((item, i) => `
+              <tr>
+                <td class="rank">${i + 1}</td>
+                <td>${esc(item.name)}</td>
+                <td><span class="badge">${esc(item.type)}</span></td>
+                <td>${item.qty}</td>
+                <td>$${item.revenue.toFixed(2)}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`;
+
+    // Revenue by event bar
+    charts.push(new Chart(document.getElementById('chartEventRev'), {
+      type: 'bar',
+      data: {
+        labels: d.events.map(e => e.eventName || 'Unnamed'),
+        datasets: [{ label: 'Revenue ($)', data: d.events.map(e => +e.revenue.toFixed(2)), backgroundColor: '#166534' }]
+      },
+      options: { plugins: { legend: { display: false } }, maintainAspectRatio: false,
+        scales: { y: { ticks: { callback: v => '$' + v } } } }
+    }));
+
+    // Orders by event bar
+    charts.push(new Chart(document.getElementById('chartEventOrders'), {
+      type: 'bar',
+      data: {
+        labels: d.events.map(e => e.eventName || 'Unnamed'),
+        datasets: [{ label: 'Orders', data: d.events.map(e => e.orderCount), backgroundColor: '#0284c7' }]
+      },
+      options: { plugins: { legend: { display: false } }, maintainAspectRatio: false }
+    }));
+
+    // Payment breakdown
+    document.getElementById('pmBreakdownSeason').innerHTML = renderPaymentBreakdown(s.paymentBreakdown);
+
+    // Top items bar
+    charts.push(new Chart(document.getElementById('chartTopItems'), {
+      type: 'bar',
+      data: {
+        labels: d.topItems.map(i => i.name),
+        datasets: [{ label: 'Revenue ($)', data: d.topItems.map(i => +i.revenue.toFixed(2)), backgroundColor: '#059669' }]
+      },
+      options: { indexAxis: 'y', plugins: { legend: { display: false } }, maintainAspectRatio: false,
+        scales: { x: { ticks: { callback: v => '$' + v } } } }
+    }));
+  }
+
+  const PM_COLORS = { Cash: '#16a34a', Venmo: '#3d95ce' };
+
+  function renderPaymentBreakdown(breakdown) {
+    const entries = Object.entries(breakdown);
+    if (!entries.length) return '<p style="color:#bbb;font-size:.85rem;padding:.5rem 0">No payment data.</p>';
+    const total = entries.reduce((s, [, v]) => s + v.revenue, 0);
+    return entries
+      .sort((a, b) => b[1].revenue - a[1].revenue)
+      .map(([pm, v]) => {
+        const pct = total ? Math.round(v.revenue / total * 100) : 0;
+        const color = PM_COLORS[pm] || '#9ca3af';
+        return `<div class="pm-row">
+          <div class="pm-name">
+            <span class="pm-dot" style="background:${color}"></span>${esc(pm)}
+          </div>
+          <div class="pm-stats">
+            <div class="pm-revenue">$${v.revenue.toFixed(2)} <span style="color:#9ca3af;font-weight:400;font-size:.78rem">(${pct}%)</span></div>
+            <div class="pm-count">${v.count} order${v.count !== 1 ? 's' : ''}</div>
+          </div>
+        </div>`;
+      }).join('');
+  }
+
+  function destroyCharts() {
+    charts.forEach(c => c.destroy());
+    charts = [];
+  }
+
+  function formatDate(d) {
+    if (!d) return '—';
+    const [y, m, day] = d.split('-');
+    return `${m}/${day}/${y}`;
+  }
+
+  function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  init();
+</script>
+<div id="offlineBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#dc2626;color:white;text-align:center;padding:.6rem 1rem;font-size:.85rem;font-weight:600;z-index:999">&#x26A0;&#xFE0F; You're offline — some features may be unavailable</div>
+<script>
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+  function _updateOnline() { document.getElementById('offlineBanner').style.display = navigator.onLine ? 'none' : ''; }
+  window.addEventListener('online', _updateOnline);
+  window.addEventListener('offline', _updateOnline);
+  _updateOnline();
+</script>
+</body>
+</html>

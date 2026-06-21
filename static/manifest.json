@@ -1,0 +1,17 @@
+{
+  "name": "Farmington Glen Concessions",
+  "short_name": "FG Concessions",
+  "description": "Concession stand ordering and management for swim meets",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f5f5",
+  "theme_color": "#14532d",
+  "icons": [
+    {
+      "src": "/static/glemons.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

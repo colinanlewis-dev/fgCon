@@ -1,14 +1,18 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#14532d" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Orders</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: system-ui, sans-serif; background: #f5f5f5; color: #222; }
-    header { background: #1a1a2e; color: white; padding: 1.2rem 2rem; }
-    header a { color: #a5b4fc; font-size: .85rem; text-decoration: none; display: block; margin-bottom: .4rem; }
+    header { background: #14532d; color: white; padding: 1.2rem 2rem; }
+    header a { color: #86efac; font-size: .85rem; text-decoration: none; display: block; margin-bottom: .4rem; }
     header h1 { font-size: 1.4rem; font-weight: 600; }
     .container { max-width: 960px; margin: 2rem auto; padding: 0 1rem; display: grid; grid-template-columns: 1fr 320px; gap: 1.5rem; align-items: start; }
     @media (max-width: 700px) { .container { grid-template-columns: 1fr; } }
@@ -16,7 +20,7 @@
     .card { background: white; border-radius: 10px; padding: 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 1.5rem; }
     .card h2 { font-size: .75rem; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 1rem; }
 
-    .event-banner { background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 8px; padding: .75rem 1rem; display: flex; align-items: center; justify-content: space-between; }
+    .event-banner { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: .75rem 1rem; display: flex; align-items: center; justify-content: space-between; }
     .event-banner .ev-name { font-weight: 600; font-size: .95rem; }
     .event-banner .ev-date { font-size: .8rem; color: #666; }
     .no-event { text-align: center; color: #aaa; padding: 3rem 1rem; font-size: .95rem; }
@@ -28,7 +32,7 @@
     .type-tile .tile-icon { font-size: 1.5rem; line-height: 1; }
     .type-tile .tile-name { font-size: .78rem; font-weight: 700; color: #374151; text-transform: uppercase; letter-spacing: .05em; }
     .type-tile .tile-meta { font-size: .7rem; color: #9ca3af; }
-    .type-tile .tile-badge { position: absolute; top: .35rem; right: .45rem; background: #4f46e5; color: white; border-radius: 99px; font-size: .65rem; font-weight: 700; padding: .1rem .38rem; min-width: 1.1rem; text-align: center; line-height: 1.4; }
+    .type-tile .tile-badge { position: absolute; top: .35rem; right: .45rem; background: #166534; color: white; border-radius: 99px; font-size: .65rem; font-weight: 700; padding: .1rem .38rem; min-width: 1.1rem; text-align: center; line-height: 1.4; }
     .type-tile.t-active { color: white; }
     .type-tile.t-cooked { border-color: #ea580c; background: #ea580c; }
     .type-tile.t-cooked .tile-name { color: white; }
@@ -39,21 +43,40 @@
     .type-tile.t-side   { border-color: #7c3aed; background: #7c3aed; }
     .type-tile.t-side .tile-name { color: white; }
     .type-tile.t-side .tile-meta { color: rgba(255,255,255,.75); }
+    .type-tile.t-snack  { border-color: #d97706; background: #d97706; }
+    .type-tile.t-snack .tile-name { color: white; }
+    .type-tile.t-snack .tile-meta { color: rgba(255,255,255,.75); }
     .type-tile.t-drink  { border-color: #0284c7; background: #0284c7; }
     .type-tile.t-drink .tile-name { color: white; }
     .type-tile.t-drink .tile-meta { color: rgba(255,255,255,.75); }
+    .type-tile.t-other  { border-color: #6b7280; background: #6b7280; }
+    .type-tile.t-other .tile-name { color: white; }
+    .type-tile.t-other .tile-meta { color: rgba(255,255,255,.75); }
     .type-tile.t-cooked .tile-badge, .type-tile.t-fresh .tile-badge,
-    .type-tile.t-side .tile-badge, .type-tile.t-drink .tile-badge { background: white; color: #374151; }
+    .type-tile.t-side .tile-badge, .type-tile.t-snack .tile-badge,
+    .type-tile.t-drink .tile-badge, .type-tile.t-other .tile-badge { background: white; color: #374151; }
+
+    /* Heat Sheet quick-add */
+    .heat-sheet-bar { display: flex; align-items: center; justify-content: space-between; background: #fafafa; border: 1.5px solid #e5e7eb; border-radius: 8px; padding: .6rem .85rem; margin-bottom: 1rem; }
+    .heat-sheet-bar .hs-label { font-size: .88rem; font-weight: 600; color: #374151; display: flex; align-items: center; gap: .5rem; }
+    .heat-sheet-bar .hs-price { font-size: .8rem; color: #6b7280; }
+    .btn-hs { background: #6b7280; color: white; border: none; border-radius: 6px; padding: .4rem .9rem; font-size: .85rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
+    .btn-hs:hover { background: #4b5563; }
     /* Item grid */
     .item-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
     .item-card { background: #fafafa; border: 1.5px solid #f0f0f0; border-radius: 8px; padding: .6rem .7rem; display: flex; flex-direction: column; gap: .35rem; transition: border-color .1s; }
-    .item-card.in-cart { background: #eef2ff; border-color: #a5b4fc; }
+    .item-card.in-cart { background: #f0fdf4; border-color: #86efac; }
     .item-card .ic-name { font-size: .85rem; font-weight: 600; color: #1f2937; line-height: 1.2; }
     .item-card .ic-price { font-size: .78rem; color: #6b7280; }
     .item-card .ic-ctrl { display: flex; align-items: center; justify-content: space-between; }
     .qty-btn { width: 28px; height: 28px; border: 1px solid #ddd; border-radius: 6px; background: white; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; flex-shrink: 0; }
     .qty-btn:hover { background: #f0f0f0; }
     .qty-num { min-width: 24px; text-align: center; font-size: .9rem; font-weight: 700; }
+    .combo-row { display: flex; align-items: center; justify-content: space-between; font-size: .72rem; color: #6b7280; padding-top: .3rem; border-top: 1px solid #f0f0f0; margin-top: .2rem; gap: .25rem; }
+    .combo-row .cr-label { font-weight: 600; flex: 1; }
+    .combo-row .cr-ctrl { display: flex; align-items: center; gap: .2rem; }
+    .combo-row .qty-btn { width: 24px; height: 24px; font-size: .85rem; }
+    .combo-row .qty-num { font-size: .8rem; min-width: 18px; }
 
     /* Cart */
     .cart-sticky { position: sticky; top: 1.5rem; }
@@ -62,8 +85,8 @@
     .cart-row:last-child { border-bottom: none; }
     .cart-empty { color: #bbb; font-size: .85rem; text-align: center; padding: 1rem 0; }
     .cart-total { display: flex; justify-content: space-between; font-weight: 700; padding-top: .75rem; border-top: 2px solid #f0f0f0; margin-bottom: 1rem; }
-    .btn-place { width: 100%; padding: .7rem; background: #4f46e5; color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; }
-    .btn-place:hover { background: #4338ca; }
+    .btn-place { width: 100%; padding: .7rem; background: #166534; color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; }
+    .btn-place:hover { background: #14532d; }
     .btn-place:disabled { background: #c7c7d9; cursor: not-allowed; }
     .vip-section { margin-bottom: 1rem; padding: .75rem; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; display: flex; flex-direction: column; gap: .5rem; }
     .vip-row { display: flex; align-items: center; gap: .6rem; font-size: .88rem; font-weight: 600; color: #92400e; }
@@ -71,8 +94,15 @@
     .toggle:checked { background: #d97706; }
     .toggle::after { content: ''; position: absolute; width: 14px; height: 14px; background: white; border-radius: 50%; top: 3px; left: 3px; transition: left .2s; }
     .toggle:checked::after { left: 19px; }
-    .vip-note-wrap { display: none; }
-    .vip-note-wrap input { font-size: .85rem; padding: .4rem .6rem; border-color: #fde68a; }
+    .vip-extras { display: none; flex-direction: column; gap: .5rem; }
+    .vip-note-wrap input { font-size: .85rem; padding: .4rem .6rem; border-color: #fde68a; width: 100%; border: 1px solid #fde68a; border-radius: 6px; }
+    .vip-team-options { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+    .vip-team-option { position: relative; }
+    .vip-team-option input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
+    .vip-team-option label { display: flex; align-items: center; justify-content: center; gap: .4rem; padding: .5rem; border: 2px solid #fde68a; border-radius: 8px; cursor: pointer; font-size: .82rem; font-weight: 700; color: #92400e; transition: all .15s; user-select: none; }
+    .vip-team-option label:hover { background: #fef9c3; }
+    .vip-team-option input:checked + label { border-color: #d97706; background: #fef3c7; }
+    .vip-team-label { font-size: .78rem; font-weight: 600; color: #92400e; }
     .badge-vip { background: #fef3c7; color: #92400e; display: inline-block; padding: .15rem .5rem; border-radius: 99px; font-size: .72rem; font-weight: 700; margin-left: .4rem; }
     .badge-combo { background: #e0f2fe; color: #075985; display: inline-block; padding: .15rem .5rem; border-radius: 99px; font-size: .72rem; font-weight: 700; margin-left: .4rem; }
     .payment-options { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-bottom: 1rem; }
@@ -107,9 +137,34 @@
     .order-total { font-weight: 700; font-size: .95rem; }
     .btn-del { background: transparent; color: #dc2626; border: 1px solid #fca5a5; font-size: .78rem; padding: .3rem .65rem; border-radius: 6px; cursor: pointer; }
     .btn-del:hover { background: #fef2f2; }
+    .btn-edit-order { background: transparent; color: #166534; border: 1px solid #86efac; font-size: .78rem; padding: .3rem .65rem; border-radius: 6px; cursor: pointer; margin-right: .3rem; }
+    .btn-edit-order:hover { background: #f0fdf4; }
+
+    /* Edit modal */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 100; align-items: flex-start; justify-content: center; padding: 2rem 1rem; overflow-y: auto; }
+    .modal-overlay.open { display: flex; }
+    .modal-box { background: white; border-radius: 14px; width: 100%; max-width: 680px; padding: 1.75rem; box-shadow: 0 8px 32px rgba(0,0,0,.18); margin: auto; }
+    .modal-box h2 { font-size: 1rem; font-weight: 700; margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; }
+    .modal-close { background: none; border: none; font-size: 1.4rem; cursor: pointer; color: #888; padding: 0 .25rem; line-height: 1; }
+    .modal-close:hover { color: #222; }
+    .modal-section-label { font-size: .7rem; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: .06em; margin: 1rem 0 .5rem; }
+    .modal-actions { display: flex; gap: .6rem; margin-top: 1.25rem; }
+    .btn-save-order { background: #166534; color: white; border: none; border-radius: 7px; padding: .6rem 1.4rem; font-size: .9rem; font-weight: 700; cursor: pointer; }
+    .btn-save-order:hover { background: #14532d; }
+    .btn-cancel-edit { background: #e5e7eb; color: #374151; border: none; border-radius: 7px; padding: .6rem 1.2rem; font-size: .9rem; font-weight: 600; cursor: pointer; }
+    .btn-cancel-edit:hover { background: #d1d5db; }
+    .edit-item-list { display: flex; flex-direction: column; gap: .35rem; margin-bottom: .5rem; }
+    .edit-item-row { display: flex; align-items: center; justify-content: space-between; background: #f9fafb; border: 1px solid #f0f0f0; border-radius: 7px; padding: .45rem .7rem; }
+    .edit-item-row.in-edit-cart { background: #f0fdf4; border-color: #86efac; }
+    .edit-item-name { font-size: .85rem; font-weight: 600; color: #1f2937; flex: 1; }
+    .edit-item-price { font-size: .8rem; color: #6b7280; margin-right: .75rem; }
+    .edit-type-tabs { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .65rem; }
+    .edit-type-tab { background: #f3f4f6; border: 1.5px solid #e5e7eb; border-radius: 7px; padding: .3rem .8rem; font-size: .78rem; font-weight: 700; cursor: pointer; text-transform: uppercase; letter-spacing: .04em; color: #374151; }
+    .edit-type-tab.active { background: #166534; border-color: #166534; color: white; }
+    .edit-item-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .4rem; }
 
     .empty { text-align: center; color: #aaa; padding: 2rem; font-size: .9rem; }
-    #toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: #1a1a2e; color: white; padding: .7rem 1.2rem; border-radius: 8px; font-size: .85rem; opacity: 0; transition: opacity .3s; pointer-events: none; }
+    #toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: #14532d; color: white; padding: .7rem 1.2rem; border-radius: 8px; font-size: .85rem; opacity: 0; transition: opacity .3s; pointer-events: none; }
     #toast.show { opacity: 1; }
     #no-event { text-align: center; color: #aaa; padding: 2rem; font-size: .9rem; }
   </style>
@@ -138,19 +193,26 @@
         </div>
         <input class="toggle toggle-green" type="checkbox" id="halfPriceToggle" onchange="onHalfPriceToggle()" />
       </div>
+      <div class="heat-sheet-bar" id="heatSheetBar" style="display:none">
+        <div class="hs-label">&#x1F4C4; Heat Sheet <span class="hs-price">$2.00 each</span></div>
+        <button class="btn-hs" onclick="addHeatSheet()">+ Add to Order</button>
+      </div>
       <div class="type-tiles" id="typeTiles"></div>
       <div id="itemPanel"></div>
     </div>
     <div class="card">
-      <h2>Popular Items</h2>
-      <div id="popularList"></div>
+      <h2>Recent Orders</h2>
+      <div id="recentOrders"></div>
     </div>
   </div>
 
   <!-- Right: cart -->
   <div class="cart-sticky">
     <div class="card">
-      <h2>Current Order</h2>
+      <h2 style="display:flex;justify-content:space-between;align-items:center">
+        Current Order
+        <button id="clearBtn" onclick="clearOrder()" style="display:none;background:transparent;border:none;color:#dc2626;font-size:.75rem;font-weight:600;cursor:pointer;padding:0;letter-spacing:.01em">✕ Clear</button>
+      </h2>
       <div class="cart-items" id="cartItems"><p class="cart-empty">No items added yet.</p></div>
       <div class="cart-total"><span>Total</span><span id="cartTotal">$0.00</span></div>
       <div class="vip-section">
@@ -158,8 +220,21 @@
           <input class="toggle" type="checkbox" id="vipToggle" onchange="onVipToggle()" />
           <label for="vipToggle">VIP Order (complimentary)</label>
         </div>
-        <div class="vip-note-wrap" id="vipNoteWrap">
-          <input type="text" id="vipNote" placeholder="VIP name or note (optional)" />
+        <div class="vip-extras" id="vipExtras">
+          <span class="vip-team-label">Team *</span>
+          <div class="vip-team-options">
+            <div class="vip-team-option">
+              <input type="radio" name="vipTeam" id="vipTeamHome" value="Home" />
+              <label for="vipTeamHome">&#x1F3E0; Home</label>
+            </div>
+            <div class="vip-team-option">
+              <input type="radio" name="vipTeam" id="vipTeamAway" value="Away" />
+              <label for="vipTeamAway">&#x1F6E3; Away</label>
+            </div>
+          </div>
+          <div class="vip-note-wrap">
+            <input type="text" id="vipNote" placeholder="Coach name or note (optional)" />
+          </div>
         </div>
       </div>
       <div class="combo-banner" id="comboBanner" style="display:none">
@@ -168,7 +243,7 @@
       </div>
       <div class="payment-options">
         <div class="payment-option cash">
-          <input type="radio" name="paymentMethod" id="payCash" value="Cash" checked />
+          <input type="radio" name="paymentMethod" id="payCash" value="Cash" checked onchange="onPaymentChange()" />
           <label for="payCash">
             <span class="pm-icon">
               <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -180,7 +255,7 @@
           </label>
         </div>
         <div class="payment-option venmo">
-          <input type="radio" name="paymentMethod" id="payVenmo" value="Venmo" />
+          <input type="radio" name="paymentMethod" id="payVenmo" value="Venmo" onchange="onPaymentChange()" />
           <label for="payVenmo">
             <span class="pm-icon">
               <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -192,7 +267,86 @@
           </label>
         </div>
       </div>
+      <div id="cashTenderedWrap" style="display:none;margin-bottom:.75rem">
+        <label style="font-size:.78rem;font-weight:600;color:#555;display:flex;flex-direction:column;gap:.35rem">
+          Cash Tendered ($)
+          <input type="number" id="cashTendered" min="0" step="0.01" placeholder="0.00"
+                 oninput="renderChange()"
+                 style="padding:.5rem .75rem;border:1px solid #ddd;border-radius:6px;font-size:.95rem;width:100%" />
+        </label>
+        <div id="changeDisplay" style="display:none;margin-top:.5rem;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:7px;padding:.5rem .85rem;display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:.82rem;font-weight:600;color:#166534">Change Due</span>
+          <span id="changeAmount" style="font-size:1.1rem;font-weight:700;color:#166534"></span>
+        </div>
+      </div>
+      <div id="queueBanner" style="display:none;margin-bottom:.6rem;background:#fef9c3;border:1px solid #fde68a;border-radius:7px;padding:.5rem .85rem;font-size:.8rem;color:#92400e;display:none;align-items:center;justify-content:space-between;gap:.5rem">
+        <span>&#x1F4E5; <span id="queueCount"></span> order(s) queued offline</span>
+        <span style="font-size:.75rem;color:#b45309">Will sync when back online</span>
+      </div>
       <button class="btn-place" id="placeBtn" onclick="placeOrder()" disabled>Place Order</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Order Modal -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal-box">
+    <h2>
+      Edit Order <span id="editOrderLabel" style="color:#888;font-weight:400;font-size:.85rem"></span>
+      <button class="modal-close" onclick="closeEditModal()">&#x2715;</button>
+    </h2>
+
+    <div class="modal-section-label">Items</div>
+    <div class="heat-sheet-bar" id="editHeatSheetBar" style="display:none;margin-bottom:.75rem"></div>
+    <div class="edit-type-tabs" id="editTypeTabs"></div>
+    <div class="edit-item-grid" id="editItemGrid"></div>
+    <div id="editCartSummary" style="margin-top:.75rem;border-top:1px solid #f0f0f0;padding-top:.75rem;font-size:.85rem;color:#555"></div>
+
+    <div class="modal-section-label">Payment Method</div>
+    <div class="payment-options" style="margin-bottom:0">
+      <div class="payment-option cash">
+        <input type="radio" name="editPayment" id="editPayCash" value="Cash" />
+        <label for="editPayCash">
+          <span class="pm-icon"><svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="28" height="28" rx="6" fill="#16a34a"/><text x="14" y="20" text-anchor="middle" font-size="16" font-weight="bold" font-family="system-ui,sans-serif" fill="white">$</text></svg></span>
+          <span class="pm-label">Cash</span>
+        </label>
+      </div>
+      <div class="payment-option venmo">
+        <input type="radio" name="editPayment" id="editPayVenmo" value="Venmo" />
+        <label for="editPayVenmo">
+          <span class="pm-icon"><svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="28" height="28" rx="6" fill="#3d95ce"/><text x="14" y="20" text-anchor="middle" font-size="15" font-weight="bold" font-family="system-ui,sans-serif" fill="white">V</text></svg></span>
+          <span class="pm-label">Venmo</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="modal-section-label">VIP</div>
+    <div class="vip-section" style="margin-bottom:0">
+      <div class="vip-row">
+        <input class="toggle" type="checkbox" id="editVipToggle" onchange="onEditVipToggle()" />
+        <label for="editVipToggle">VIP Order (complimentary)</label>
+      </div>
+      <div class="vip-extras" id="editVipExtras">
+        <span class="vip-team-label">Team *</span>
+        <div class="vip-team-options">
+          <div class="vip-team-option">
+            <input type="radio" name="editVipTeam" id="editVipTeamHome" value="Home" />
+            <label for="editVipTeamHome">&#x1F3E0; Home</label>
+          </div>
+          <div class="vip-team-option">
+            <input type="radio" name="editVipTeam" id="editVipTeamAway" value="Away" />
+            <label for="editVipTeamAway">&#x1F6E3; Away</label>
+          </div>
+        </div>
+        <div class="vip-note-wrap">
+          <input type="text" id="editVipNote" placeholder="Coach name or note (optional)" />
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-save-order" onclick="saveEditModal()">Save Changes</button>
+      <button class="btn-cancel-edit" onclick="closeEditModal()">Cancel</button>
     </div>
   </div>
 </div>
@@ -205,6 +359,7 @@
   let comboData = [];
   let activeCombo = null;
   let selectedEventId = null;
+  let activeMenuTypeId = null;
 
   function isHalfPrice() { return document.getElementById('halfPriceToggle').checked; }
 
@@ -218,29 +373,42 @@
   }
 
   async function init() {
-    const res = await fetch('/api/events/active');
-    const event = await res.json();
+    const res = await fetch('/api/orders/init');
+    const { event, menu, combos } = await res.json();
     const banner = document.getElementById('eventBanner');
     if (!event) {
       banner.innerHTML = '<p class="no-event">No active event. Set one active in Event Manager.</p>';
       return;
     }
     selectedEventId = event.id;
+    activeMenuTypeId = event.menuTypeID ?? null;
     banner.innerHTML = `<div class="event-banner">
       <span class="ev-name">${esc(event.eventName || 'Unnamed Event')}</span>
       <span class="ev-date">${formatDate(event.eventDate)}${event.eventSize ? ' &mdash; ' + esc(event.eventSize) + ' guests' : ''}</span>
     </div>`;
     document.getElementById('mainContent').style.display = '';
-    await Promise.all([loadMenu(), loadOrders(), loadCombos()]);
+    onPaymentChange();
+
+    // Hydrate menu and combos from the single init response (no extra round trips)
+    menuData = menu.filter(m => m.isAvailable).map(m => ({ ...m, itemType: normalizeType(m.itemType) }));
+    comboData = combos;
+    if (menuData.some(m => m.itemName === 'Heat Sheet' && m.itemType === 'Other')) {
+      document.getElementById('heatSheetBar').style.display = '';
+      renderHeatSheetBar();
+    }
+    renderMenu();
     renderCart();
+    loadOrders();
   }
 
-  const TYPE_ORDER  = ['Cooked', 'Fresh', 'Side', 'Drink'];
+  const TYPE_ORDER  = ['Cooked', 'Fresh', 'Snacks', 'Side', 'Drink'];
   const TYPE_CONFIG = {
     Cooked: { icon: '&#x1F373;', cls: 't-cooked' },
     Fresh:  { icon: '&#x1F957;', cls: 't-fresh'  },
-    Side:   { icon: '&#x1F35F;', cls: 't-side'   },
+    Snacks: { icon: '&#x1F35F;', cls: 't-snack'  },
+    Side:   { icon: '&#x1F96A;', cls: 't-side'   },
     Drink:  { icon: '&#x1F964;', cls: 't-drink'  },
+    Other:  { icon: '&#x1F4C4;', cls: 't-other'  },
   };
   let activeType = null;
 
@@ -248,43 +416,82 @@
     return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
   }
 
-  async function loadMenu() {
-    const res = await fetch('/api/menu');
-    menuData = (await res.json())
-      .filter(m => m.isAvailable)
-      .map(m => ({ ...m, itemType: normalizeType(m.itemType) }));
-    renderMenu();
-  }
-
   function renderMenu() {
     const groups = {};
     menuData.forEach(m => { (groups[m.itemType] = groups[m.itemType] || []).push(m); });
 
     // --- Tiles ---
-    document.getElementById('typeTiles').innerHTML = TYPE_ORDER
-      .filter(t => groups[t])
-      .map(t => {
-        const cfg = TYPE_CONFIG[t];
-        const inCart = menuData.filter(m => m.itemType === t && cart[m.id]).reduce((s, m) => s + cart[m.id].qty, 0);
-        const isActive = activeType === t;
-        return `<button class="type-tile${isActive ? ' ' + cfg.cls : ''}" onclick="selectType('${t}')">
-          <span class="tile-icon">${cfg.icon}</span>
-          <span class="tile-name">${t}</span>
-          <span class="tile-meta">${groups[t].length} items</span>
-          ${inCart ? `<span class="tile-badge">${inCart}</span>` : ''}
-        </button>`;
-      }).join('');
+    const typeTiles = TYPE_ORDER.filter(t => groups[t]).map(t => {
+      const cfg = TYPE_CONFIG[t];
+      const inCart = menuData.filter(m => m.itemType === t && cart[m.id]).reduce((s, m) => s + cart[m.id].qty, 0);
+      const isActive = activeType === t;
+      return `<button class="type-tile${isActive ? ' ' + cfg.cls : ''}" onclick="selectType('${t}')">
+        <span class="tile-icon">${cfg.icon}</span>
+        <span class="tile-name">${t}</span>
+        <span class="tile-meta">${groups[t].length} items</span>
+        ${inCart ? `<span class="tile-badge">${inCart}</span>` : ''}
+      </button>`;
+    });
+
+    document.getElementById('typeTiles').innerHTML = typeTiles.join('');
 
     // --- Item panel ---
     const panel = document.getElementById('itemPanel');
-    if (!activeType || !groups[activeType]) { panel.innerHTML = ''; return; }
+    if (!activeType) { panel.innerHTML = ''; return; }
+
+    let items;
+    if (groups[activeType]) {
+      items = groups[activeType];
+    } else {
+      panel.innerHTML = ''; return;
+    }
+
+    const chipItem  = menuData.find(m => m.isComboSnack && m.itemName.toLowerCase().includes('chip'));
+    const candyItem = menuData.find(m => m.isComboSnack && m.itemName.toLowerCase().includes('candy'));
+    const drinkItem = menuData.find(m => m.itemType === 'Drink' && (m.itemName.toLowerCase().includes('gatorade') || m.itemName.toLowerCase().includes('soda')));
+
     panel.innerHTML = `<div class="item-grid">${
-      groups[activeType].map(m => {
+      items.map(m => {
         const ep = effectivePrice(m);
         const qty = cart[m.id] ? cart[m.id].qty : 0;
         const priceHtml = isDiscounted(m)
           ? `<span class="price-orig">$${m.itemCost.toFixed(2)}</span> <span class="price-half">$${ep.toFixed(2)}</span>`
           : `$${ep.toFixed(2)}`;
+
+        let comboRows = '';
+        if (m.isComboMain) {
+          if (chipItem) {
+            const chipComboQty = Math.min(
+              cart[m.id] ? cart[m.id].qty : 0,
+              cart[chipItem.id] ? cart[chipItem.id].qty : 0,
+              drinkItem && cart[drinkItem.id] ? cart[drinkItem.id].qty : 0
+            );
+            comboRows += `<div class="combo-row">
+              <span class="cr-label">w/ Chip</span>
+              <div class="cr-ctrl">
+                <button class="qty-btn" onclick="adjustCombo(${m.id},${chipItem.id},${drinkItem ? drinkItem.id : 'null'},-1)">&#8722;</button>
+                <span class="qty-num">${chipComboQty}</span>
+                <button class="qty-btn" onclick="adjustCombo(${m.id},${chipItem.id},${drinkItem ? drinkItem.id : 'null'},1)">+</button>
+              </div>
+            </div>`;
+          }
+          if (candyItem) {
+            const candyComboQty = Math.min(
+              cart[m.id] ? cart[m.id].qty : 0,
+              cart[candyItem.id] ? cart[candyItem.id].qty : 0,
+              drinkItem && cart[drinkItem.id] ? cart[drinkItem.id].qty : 0
+            );
+            comboRows += `<div class="combo-row">
+              <span class="cr-label">w/ Candy</span>
+              <div class="cr-ctrl">
+                <button class="qty-btn" onclick="adjustCombo(${m.id},${candyItem.id},${drinkItem ? drinkItem.id : 'null'},-1)">&#8722;</button>
+                <span class="qty-num">${candyComboQty}</span>
+                <button class="qty-btn" onclick="adjustCombo(${m.id},${candyItem.id},${drinkItem ? drinkItem.id : 'null'},1)">+</button>
+              </div>
+            </div>`;
+          }
+        }
+
         return `<div class="item-card${qty > 0 ? ' in-cart' : ''}" id="card-${m.id}">
           <div class="ic-name">${esc(m.itemName)}</div>
           <div class="ic-price" id="price-${m.id}">${priceHtml}</div>
@@ -293,9 +500,51 @@
             <span class="qty-num" id="qty-${m.id}">${qty}</span>
             <button class="qty-btn" onclick="adjustQty(${m.id}, 1)">+</button>
           </div>
+          ${comboRows}
         </div>`;
       }).join('')
     }</div>`;
+  }
+
+  function adjustHeatSheet(delta) {
+    const hs = menuData.find(m => m.itemName === 'Heat Sheet' && m.itemType === 'Other');
+    if (!hs) return;
+    const current = cart[hs.id] ? cart[hs.id].qty : 0;
+    const next = Math.max(0, current + delta);
+    if (next === 0) delete cart[hs.id];
+    else cart[hs.id] = { name: hs.itemName, price: hs.itemCost, qty: next, type: hs.itemType, isComboSnack: false };
+    renderHeatSheetBar();
+    renderMenu();
+    renderCart();
+  }
+
+  function renderHeatSheetBar() {
+    const hs = menuData.find(m => m.itemName === 'Heat Sheet' && m.itemType === 'Other');
+    if (!hs) return;
+    const qty = cart[hs.id] ? cart[hs.id].qty : 0;
+    const bar = document.getElementById('heatSheetBar');
+    if (qty > 0) {
+      bar.innerHTML = `
+        <div class="hs-label">&#x1F4C4; Heat Sheet <span class="hs-price">$2.00 each</span></div>
+        <div style="display:flex;align-items:center;gap:.6rem">
+          <button class="qty-btn" onclick="adjustHeatSheet(-1)">&#8722;</button>
+          <span style="font-weight:700;font-size:.95rem;min-width:1.5rem;text-align:center">${qty}</span>
+          <button class="qty-btn" onclick="adjustHeatSheet(1)">+</button>
+        </div>`;
+    } else {
+      bar.innerHTML = `
+        <div class="hs-label">&#x1F4C4; Heat Sheet <span class="hs-price">$2.00 each</span></div>
+        <button class="btn-hs" onclick="adjustHeatSheet(1)">+ Add to Order</button>`;
+    }
+  }
+
+  function clearOrder() {
+    cart = {};
+    document.getElementById('cashTendered').value = '';
+    document.getElementById('changeDisplay').style.display = 'none';
+    renderHeatSheetBar();
+    renderMenu();
+    renderCart();
   }
 
   function selectType(type) {
@@ -309,30 +558,33 @@
     renderCart();
   }
 
+  function adjustCombo(mainId, sideId, drinkId, delta) {
+    [mainId, sideId, drinkId].filter(Boolean).forEach(id => {
+      const item = menuData.find(m => m.id === id);
+      if (!item) return;
+      const next = Math.max(0, (cart[id] ? cart[id].qty : 0) + delta);
+      if (next === 0) delete cart[id];
+      else cart[id] = { name: item.itemName, price: effectivePrice(item), qty: next, type: item.itemType, isComboSnack: !!item.isComboSnack, isComboMain: !!item.isComboMain };
+    });
+    renderMenu();
+    renderCart();
+  }
+
   function adjustQty(id, delta) {
     const item = menuData.find(m => m.id === id);
     if (!item) return;
     const current = cart[id] ? cart[id].qty : 0;
     const next = Math.max(0, current + delta);
     if (next === 0) { delete cart[id]; }
-    else { cart[id] = { name: item.itemName, price: effectivePrice(item), qty: next, type: item.itemType }; }
+    else { cart[id] = { name: item.itemName, price: effectivePrice(item), qty: next, type: item.itemType, isComboSnack: !!item.isComboSnack, isComboMain: !!item.isComboMain }; }
     // Update qty display and card highlight in-place
     const qtyEl = document.getElementById('qty-' + id);
     if (qtyEl) qtyEl.textContent = next;
     const cardEl = document.getElementById('card-' + id);
     if (cardEl) cardEl.classList.toggle('in-cart', next > 0);
-    const popQtyEl = document.getElementById('pop-qty-' + id);
-    if (popQtyEl) popQtyEl.textContent = next;
-    const popCardEl = document.getElementById('pop-card-' + id);
-    if (popCardEl) popCardEl.classList.toggle('in-cart', next > 0);
     // Refresh tile badges
     renderMenu();
     renderCart();
-  }
-
-  async function loadCombos() {
-    const res = await fetch('/api/combos');
-    comboData = await res.json();
   }
 
   function cartItemsByType(...types) {
@@ -360,9 +612,9 @@
       keepTrying = false;
 
       const avail = (id) => remaining[id] > 0;
-      const mains  = cartItemsByType('Cooked', 'Fresh').filter(i => avail(i.id));
+      const mains  = Object.entries(cart).filter(([id, item]) => item.isComboMain && avail(parseInt(id))).map(([id, item]) => ({ id: parseInt(id), ...item }));
       const drinks = cartItemsByType('Drink').filter(i => avail(i.id));
-      const sides  = cartItemsByType('Side', 'Fresh').filter(i => avail(i.id));
+      const sides  = Object.entries(cart).filter(([id, item]) => item.isComboSnack && avail(parseInt(id))).map(([id, item]) => ({ id: parseInt(id), ...item }));
       if (!mains.length || !drinks.length || !sides.length) break;
 
       let best = null, bestSavings = 0;
@@ -387,14 +639,13 @@
       }
 
       if (best) {
-        const { main, drink, side, drinkSaved, sideSaved, cp } = best;
+        const { main, drink, side, savings } = best;
         remaining[main.id]--;
         remaining[drink.id]--;
         remaining[side.id]--;
-        deltas[main.id]  = (deltas[main.id]  || 0) + cp;
-        deltas[drink.id] = (deltas[drink.id] || 0) - drinkSaved;
-        deltas[side.id]  = (deltas[side.id]  || 0) - sideSaved;
-        totalSavings += best.savings;
+        // Net discount lands entirely on the main item
+        deltas[main.id] = (deltas[main.id] || 0) - savings;
+        totalSavings += savings;
         comboCount++;
         keepTrying = true;
       }
@@ -402,7 +653,7 @@
 
     if (!comboCount) { activeCombo = null; return; }
 
-    // Blend per-unit price: spread total delta evenly across all units of that item
+    // Spread each main item's total discount evenly across its units
     const prices = {};
     for (const [id, delta] of Object.entries(deltas)) {
       const intId = parseInt(id);
@@ -412,10 +663,44 @@
     activeCombo = { count: comboCount, savings: totalSavings, prices };
   }
 
+  function onPaymentChange() {
+    const isCash = document.querySelector('input[name="paymentMethod"]:checked')?.value === 'Cash';
+    const wrap = document.getElementById('cashTenderedWrap');
+    wrap.style.display = isCash ? '' : 'none';
+    if (!isCash) {
+      document.getElementById('cashTendered').value = '';
+      document.getElementById('changeDisplay').style.display = 'none';
+    } else {
+      renderChange();
+    }
+  }
+
+  function renderChange() {
+    const tendered = parseFloat(document.getElementById('cashTendered').value);
+    const totalText = document.getElementById('cartTotal').textContent.replace(/[^0-9.]/g, '');
+    const total = parseFloat(totalText) || 0;
+    const display = document.getElementById('changeDisplay');
+    if (!isNaN(tendered) && tendered >= 0 && total >= 0) {
+      const change = tendered - total;
+      document.getElementById('changeAmount').textContent = '$' + Math.max(0, change).toFixed(2);
+      display.style.display = 'flex';
+      display.style.background = change < 0 ? '#fef2f2' : '#f0fdf4';
+      display.style.borderColor = change < 0 ? '#fca5a5' : '#bbf7d0';
+      document.getElementById('changeAmount').style.color = change < 0 ? '#dc2626' : '#166534';
+      document.querySelector('#changeDisplay span:first-child').style.color = change < 0 ? '#dc2626' : '#166534';
+    } else {
+      display.style.display = 'none';
+    }
+  }
+
   function isVip() { return document.getElementById('vipToggle').checked; }
 
   function onVipToggle() {
-    document.getElementById('vipNoteWrap').style.display = isVip() ? 'block' : 'none';
+    document.getElementById('vipExtras').style.display = isVip() ? 'flex' : 'none';
+    if (!isVip()) {
+      document.querySelectorAll('input[name="vipTeam"]').forEach(r => r.checked = false);
+      document.getElementById('vipNote').value = '';
+    }
     renderCart();
   }
 
@@ -426,104 +711,409 @@
       cartEl.innerHTML = '<p class="cart-empty">No items added yet.</p>';
       document.getElementById('cartTotal').textContent = '$0.00';
       document.getElementById('placeBtn').disabled = true;
+      document.getElementById('clearBtn').style.display = 'none';
+      document.getElementById('comboBanner').style.display = 'none';
       return;
     }
     const vip = isVip();
+    autoApplyCombo();
     let total = 0;
     cartEl.innerHTML = entries.map(([id, item]) => {
-      const line = item.price * item.qty;
+      const intId = parseInt(id);
+      const comboUnitPrice = (!vip && activeCombo && activeCombo.prices[intId] !== undefined)
+        ? activeCombo.prices[intId] : null;
+      const unitPrice = comboUnitPrice !== null ? comboUnitPrice : item.price;
+      const line = unitPrice * item.qty;
       if (!vip) total += line;
+      let priceHtml;
+      if (vip) {
+        priceHtml = `<s style="color:#bbb">$${(item.price * item.qty).toFixed(2)}</s> $0.00`;
+      } else if (comboUnitPrice !== null && comboUnitPrice < item.price) {
+        priceHtml = `<s style="color:#bbb">$${(item.price * item.qty).toFixed(2)}</s> <span style="color:#0284c7;font-weight:600">$${line.toFixed(2)}</span>`;
+      } else {
+        priceHtml = `$${line.toFixed(2)}`;
+      }
       return `<div class="cart-row">
         <span>${esc(item.name)} x${item.qty}</span>
-        <span>${vip ? '<s style="color:#bbb">$' + line.toFixed(2) + '</s> $0.00' : '$' + line.toFixed(2)}</span>
+        <span>${priceHtml}</span>
       </div>`;
     }).join('');
-    autoApplyCombo();
     const banner = document.getElementById('comboBanner');
     if (!vip && activeCombo) {
-      const label = document.querySelector('#comboBanner .cb-label');
-      label.textContent = `🍱 ${activeCombo.count > 1 ? activeCombo.count + ' Combos' : 'Combo'} applied`;
+      document.querySelector('#comboBanner .cb-label').textContent =
+        `🍱 ${activeCombo.count > 1 ? activeCombo.count + ' Combos' : 'Combo'} applied`;
       document.getElementById('comboSaving').textContent = `Saved $${activeCombo.savings.toFixed(2)}`;
       banner.style.display = 'flex';
-      total = Object.entries(cart).reduce((sum, [id, item]) => {
-        const p = activeCombo.prices[parseInt(id)] !== undefined ? activeCombo.prices[parseInt(id)] : item.price;
-        return sum + p * item.qty;
-      }, 0);
     } else {
       banner.style.display = 'none';
     }
     document.getElementById('cartTotal').textContent = vip ? '$0.00 (VIP)' : '$' + total.toFixed(2);
     document.getElementById('placeBtn').disabled = false;
+    document.getElementById('clearBtn').style.display = '';
+    renderChange();
+  }
+
+  // ── Offline order queue ───────────────────────────────────────
+  const QUEUE_KEY = 'fgcon_order_queue';
+
+  function getQueue() {
+    try { return JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]'); } catch { return []; }
+  }
+  function saveQueue(q) { localStorage.setItem(QUEUE_KEY, JSON.stringify(q)); }
+  function enqueue(payload) {
+    const q = getQueue();
+    q.push({ _qid: Date.now() + Math.random(), payload });
+    saveQueue(q);
+    renderQueueBanner();
+  }
+  function dequeue(qid) {
+    saveQueue(getQueue().filter(e => e._qid !== qid));
+    renderQueueBanner();
+  }
+  function renderQueueBanner() {
+    const q = getQueue();
+    const banner = document.getElementById('queueBanner');
+    if (q.length) {
+      document.getElementById('queueCount').textContent = q.length;
+      banner.style.display = 'flex';
+    } else {
+      banner.style.display = 'none';
+    }
+  }
+  async function flushQueue() {
+    const q = getQueue();
+    if (!q.length) return;
+    let synced = 0;
+    for (const entry of [...q]) {
+      try {
+        const res = await fetch('/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(entry.payload),
+        });
+        if (res.ok) { dequeue(entry._qid); synced++; }
+      } catch { break; }  // still offline — stop trying
+    }
+    if (synced) {
+      toast(`${synced} queued order${synced > 1 ? 's' : ''} synced!`);
+      await loadOrders();
+    }
+  }
+  window.addEventListener('online', flushQueue);
+
+  function resetOrderForm() {
+    cart = {};
+    document.getElementById('vipToggle').checked = false;
+    document.getElementById('vipNote').value = '';
+    document.getElementById('vipExtras').style.display = 'none';
+    document.querySelectorAll('input[name="vipTeam"]').forEach(r => r.checked = false);
+    document.querySelector('input[name="paymentMethod"][value="Cash"]').checked = true;
+    document.getElementById('cashTendered').value = '';
+    document.getElementById('changeDisplay').style.display = 'none';
+    document.getElementById('cashTenderedWrap').style.display = '';
+    renderMenu();
+    renderCart();
   }
 
   async function placeOrder() {
     if (!selectedEventId || !Object.keys(cart).length) return;
     document.getElementById('placeBtn').disabled = true;
     const vip = isVip();
+    if (vip && !document.querySelector('input[name="vipTeam"]:checked')) {
+      toast('Please select Home or Away team for this VIP order.');
+      document.getElementById('placeBtn').disabled = false;
+      return;
+    }
     const adj = (!vip && activeCombo) ? activeCombo : null;
     const items = Object.entries(cart).map(([id, item]) => {
       const intId = parseInt(id);
       const price = (adj && adj.prices[intId] !== undefined) ? adj.prices[intId] : item.price;
       return { menuItemId: intId, quantity: item.qty, priceAtTime: price };
     });
-    await fetch('/api/orders', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        eventId: parseInt(selectedEventId),
-        items,
-        isVIP: vip,
-        vipNote: vip ? (document.getElementById('vipNote').value || null) : null,
-        usedCombo: !!adj,
-        paymentMethod: document.querySelector('input[name="paymentMethod"]:checked').value,
-      }),
-    });
-    cart = {};
-    document.getElementById('vipToggle').checked = false;
-    document.getElementById('vipNote').value = '';
-    document.getElementById('vipNoteWrap').style.display = 'none';
-    document.querySelector('input[name="paymentMethod"][value="Cash"]').checked = true;
-    renderMenu();
-    renderCart();
-    await loadOrders();
-    toast(vip ? 'VIP order placed!' : 'Order placed!');
+    const orderPayload = {
+      eventId: parseInt(selectedEventId),
+      items,
+      isVIP: vip,
+      vipNote: vip ? (document.getElementById('vipNote').value || null) : null,
+      vipTeam: vip ? document.querySelector('input[name="vipTeam"]:checked').value : null,
+      usedCombo: !!adj,
+      paymentMethod: document.querySelector('input[name="paymentMethod"]:checked').value,
+    };
+
+    // Short-circuit immediately if browser already knows we're offline
+    if (!navigator.onLine) {
+      enqueue(orderPayload);
+      resetOrderForm();
+      toast('Offline — order saved locally and will sync when reconnected.');
+      return;
+    }
+
+    // Timeout after 6 s so the button never hangs indefinitely
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 6000);
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderPayload),
+        signal: ctrl.signal,
+      });
+      clearTimeout(timer);
+      if (!res.ok) throw new Error('Server error');
+      resetOrderForm();
+      await loadOrders();
+      toast(vip ? 'VIP order placed!' : 'Order placed!');
+    } catch {
+      clearTimeout(timer);
+      enqueue(orderPayload);
+      resetOrderForm();
+      toast('Offline — order saved locally and will sync when reconnected.');
+    }
   }
 
   async function loadOrders() {
-    const res = await fetch(`/api/orders?eventId=${selectedEventId}`);
-    const orders = await res.json();
-    const el = document.getElementById('popularList');
-    if (!orders.length) {
-      el.innerHTML = '<p class="empty">No orders yet &mdash; popular items will appear here.</p>';
-      return;
-    }
-    // Aggregate quantities sold across all orders this event
-    const totals = {};
-    orders.forEach(o => o.items.forEach(i => {
-      const id = i.menuItemId;
-      if (!totals[id]) totals[id] = { id, name: i.menu?.itemName || 'Item', qty: 0 };
-      totals[id].qty += i.quantity;
-    }));
-    const top5 = Object.values(totals).sort((a, b) => b.qty - a.qty).slice(0, 5);
-    el.innerHTML = `<div class="item-grid">${top5.map(t => {
-      const m = menuData.find(m => m.id === t.id);
-      if (!m) return '';
-      const ep = effectivePrice(m);
-      const qty = cart[m.id] ? cart[m.id].qty : 0;
-      const priceHtml = isDiscounted(m)
-        ? `<span class="price-orig">$${m.itemCost.toFixed(2)}</span> <span class="price-half">$${ep.toFixed(2)}</span>`
-        : `$${ep.toFixed(2)}`;
-      return `<div class="item-card${qty > 0 ? ' in-cart' : ''}" id="pop-card-${m.id}">
-        <div class="ic-name">${esc(m.itemName)}</div>
-        <div class="ic-price" id="pop-price-${m.id}">${priceHtml}</div>
-        <div style="font-size:.7rem;color:#9ca3af">Ordered ${t.qty}x</div>
-        <div class="ic-ctrl">
-          <button class="qty-btn" onclick="adjustQty(${m.id}, -1)">&#8722;</button>
-          <span class="qty-num" id="pop-qty-${m.id}">${qty}</span>
-          <button class="qty-btn" onclick="adjustQty(${m.id}, 1)">+</button>
+    await loadRecentOrders();
+  }
+
+  async function loadRecentOrders() {
+    const el = document.getElementById('recentOrders');
+
+    // Render queued (offline) orders first
+    const queued = getQueue().filter(e => e.payload.eventId === parseInt(selectedEventId));
+    const queuedHtml = queued.map(e => {
+      const p = e.payload;
+      const total = p.items.reduce((s, i) => s + i.priceAtTime * i.quantity, 0);
+      const itemSummary = p.items.map(i => {
+        const m = menuData.find(m => m.id === i.menuItemId);
+        return `${i.quantity}x ${m ? esc(m.itemName) : 'Item'}`;
+      }).join(', ');
+      return `<div class="order-card" style="border-color:#fde68a;background:#fffef0">
+        <div class="order-header">
+          <span class="order-id">&#x1F4E5; Pending sync ${p.isVIP ? '<span class="badge-vip">VIP</span>' : ''}</span>
+          <span class="order-time" style="color:#b45309">Offline</span>
+        </div>
+        <div class="order-lines" style="color:#6b7280;font-size:.82rem;margin-bottom:.5rem">${itemSummary || '—'}</div>
+        <div class="order-footer">
+          <span class="order-total">${p.isVIP ? '<span style="color:#92400e">VIP / Free</span>' : '$' + total.toFixed(2)}</span>
+          <span style="font-size:.75rem;color:#b45309">Will sync automatically</span>
         </div>
       </div>`;
-    }).join('')}</div>`;
+    }).join('');
+
+    // Then fetch and render server orders
+    let serverHtml = '';
+    try {
+      const res = await fetch(`/api/orders?eventId=${selectedEventId}`);
+      const orders = await res.json();
+      serverHtml = orders.slice(0, 20).map(o => {
+        const total = (o.items || []).reduce((s, i) => s + i.priceAtTime * i.quantity, 0);
+        const itemSummary = (o.items || []).map(i => `${i.quantity}x ${i.menu ? esc(i.menu.itemName) : 'Item'}`).join(', ');
+        const badges = [
+          o.isVIP ? `<span class="badge-vip">VIP${o.vipTeam ? ' · ' + o.vipTeam : ''}</span>` : '',
+          o.usedCombo ? '<span class="badge-combo">Combo</span>' : '',
+        ].filter(Boolean).join(' ');
+        return `<div class="order-card">
+          <div class="order-header">
+            <span class="order-id">Order #${o.id} ${badges}</span>
+            <span class="order-time">${formatTime(o.created_at)}</span>
+          </div>
+          <div class="order-lines" style="color:#6b7280;font-size:.82rem;margin-bottom:.5rem">${itemSummary || '—'}</div>
+          ${o.vipNote ? `<div style="font-size:.78rem;color:#92400e;margin-bottom:.4rem">&#x1F4CB; ${esc(o.vipNote)}</div>` : ''}
+          <div class="order-footer">
+            <span class="order-total">${o.isVIP ? '<span style="color:#92400e">VIP / Free</span>' : '$' + total.toFixed(2)}</span>
+            <div>
+              <button class="btn-edit-order" onclick="openEditModal(${o.id})">Edit</button>
+              <button class="btn-del" onclick="deleteOrder(${o.id})">Delete</button>
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+    } catch { /* offline — only show queued */ }
+
+    el.innerHTML = queuedHtml + serverHtml || '<p class="empty">No orders yet.</p>';
+  }
+
+  // ── Edit Modal ────────────────────────────────────────────────
+  let editOrderId = null;
+  let editCart = {};
+  let editActiveType = null;
+
+  async function openEditModal(orderId) {
+    const res = await fetch(`/api/orders/${orderId}`);
+    if (!res.ok) { toast('Could not load order'); return; }
+    const order = await res.json();
+    editOrderId = orderId;
+
+    // Build editCart from existing items — use menu data for current price if available
+    editCart = {};
+    for (const i of (order.items || [])) {
+      const live = menuData.find(m => m.id === i.menuItemId);
+      const fallback = i.menu;
+      const menuItem = live || fallback;
+      if (!menuItem) continue;
+      editCart[i.menuItemId] = {
+        name: menuItem.itemName,
+        price: live ? live.itemCost : i.priceAtTime,
+        qty: i.quantity,
+        type: normalizeType(menuItem.itemType || 'Unknown'),
+        isComboSnack: !!(menuItem.isComboSnack),
+      };
+    }
+
+    // Payment
+    const pm = order.paymentMethod || 'Cash';
+    document.getElementById('editPayCash').checked  = pm === 'Cash';
+    document.getElementById('editPayVenmo').checked = pm === 'Venmo';
+
+    // VIP
+    document.getElementById('editVipToggle').checked = !!order.isVIP;
+    document.getElementById('editVipExtras').style.display = order.isVIP ? 'flex' : 'none';
+    document.querySelectorAll('input[name="editVipTeam"]').forEach(r => { r.checked = r.value === order.vipTeam; });
+    document.getElementById('editVipNote').value = order.vipNote || '';
+
+    document.getElementById('editOrderLabel').textContent = `#${orderId}`;
+    editActiveType = null;
+    renderEditHeatSheetBar();
+    renderEditModal();
+    document.getElementById('editModal').classList.add('open');
+  }
+
+  function closeEditModal() {
+    document.getElementById('editModal').classList.remove('open');
+    editOrderId = null;
+    editCart = {};
+  }
+
+  function onEditVipToggle() {
+    const vip = document.getElementById('editVipToggle').checked;
+    document.getElementById('editVipExtras').style.display = vip ? 'flex' : 'none';
+    if (!vip) {
+      document.querySelectorAll('input[name="editVipTeam"]').forEach(r => r.checked = false);
+      document.getElementById('editVipNote').value = '';
+    }
+  }
+
+  function renderEditModal() {
+    const groups = {};
+    menuData.forEach(m => { (groups[m.itemType] = groups[m.itemType] || []).push(m); });
+    const types = TYPE_ORDER.filter(t => groups[t]);
+
+    // Type tabs
+    document.getElementById('editTypeTabs').innerHTML = types.map(t => {
+      const cfg = TYPE_CONFIG[t];
+      const inCart = menuData.filter(m => m.itemType === t && editCart[m.id]).reduce((s, m) => s + editCart[m.id].qty, 0);
+      return `<button class="edit-type-tab${editActiveType === t ? ' active' : ''}" onclick="setEditType('${t}')">
+        ${cfg.icon} ${t}${inCart ? ` (${inCart})` : ''}
+      </button>`;
+    }).join('');
+
+    // Item grid for active type
+    const grid = document.getElementById('editItemGrid');
+    if (!editActiveType || !groups[editActiveType]) {
+      grid.innerHTML = '<p style="color:#bbb;font-size:.82rem;grid-column:1/-1;padding:.25rem 0">Select a category above to add or adjust items.</p>';
+    } else {
+      grid.innerHTML = groups[editActiveType].map(m => {
+        const qty = editCart[m.id] ? editCart[m.id].qty : 0;
+        return `<div class="item-card${qty > 0 ? ' in-cart' : ''}" id="edit-card-${m.id}" style="gap:.3rem">
+          <div class="ic-name" style="font-size:.82rem">${esc(m.itemName)}</div>
+          <div class="ic-price" style="font-size:.75rem">$${m.itemCost.toFixed(2)}</div>
+          <div class="ic-ctrl">
+            <button class="qty-btn" onclick="editAdjustQty(${m.id}, -1)">&#8722;</button>
+            <span class="qty-num" id="edit-qty-${m.id}" style="font-size:.85rem">${qty}</span>
+            <button class="qty-btn" onclick="editAdjustQty(${m.id}, 1)">+</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    // Cart summary
+    const entries = Object.entries(editCart).filter(([, i]) => i.qty > 0);
+    const total = entries.reduce((s, [, i]) => s + i.price * i.qty, 0);
+    document.getElementById('editCartSummary').innerHTML = entries.length
+      ? entries.map(([, i]) => `<span style="margin-right:.75rem">${i.qty}x ${esc(i.name)} <span style="color:#9ca3af">$${(i.price * i.qty).toFixed(2)}</span></span>`).join('') +
+        `<div style="margin-top:.4rem;font-weight:700;color:#1f2937">Total: $${total.toFixed(2)}</div>`
+      : '<span style="color:#bbb">No items in order.</span>';
+  }
+
+  function editAdjustHeatSheet(delta) {
+    const hs = menuData.find(m => m.itemName === 'Heat Sheet' && m.itemType === 'Other');
+    if (!hs) return;
+    const current = editCart[hs.id] ? editCart[hs.id].qty : 0;
+    const next = Math.max(0, current + delta);
+    if (next === 0) delete editCart[hs.id];
+    else editCart[hs.id] = { name: hs.itemName, price: hs.itemCost, qty: next, type: hs.itemType, isComboSnack: false };
+    renderEditHeatSheetBar();
+    renderEditModal();
+  }
+
+  function renderEditHeatSheetBar() {
+    const hs = menuData.find(m => m.itemName === 'Heat Sheet' && m.itemType === 'Other');
+    const bar = document.getElementById('editHeatSheetBar');
+    if (!hs) { bar.style.display = 'none'; return; }
+    bar.style.display = '';
+    const qty = editCart[hs.id] ? editCart[hs.id].qty : 0;
+    if (qty > 0) {
+      bar.innerHTML = `
+        <div class="hs-label">&#x1F4C4; Heat Sheet <span class="hs-price">$2.00 each</span></div>
+        <div style="display:flex;align-items:center;gap:.6rem">
+          <button class="qty-btn" onclick="editAdjustHeatSheet(-1)">&#8722;</button>
+          <span style="font-weight:700;font-size:.95rem;min-width:1.5rem;text-align:center">${qty}</span>
+          <button class="qty-btn" onclick="editAdjustHeatSheet(1)">+</button>
+        </div>`;
+    } else {
+      bar.innerHTML = `
+        <div class="hs-label">&#x1F4C4; Heat Sheet <span class="hs-price">$2.00 each</span></div>
+        <button class="btn-hs" onclick="editAdjustHeatSheet(1)">+ Add to Order</button>`;
+    }
+  }
+
+  function setEditType(type) {
+    editActiveType = editActiveType === type ? null : type;
+    renderEditModal();
+  }
+
+  function editAdjustQty(id, delta) {
+    const item = menuData.find(m => m.id === id);
+    if (!item) return;
+    const current = editCart[id] ? editCart[id].qty : 0;
+    const next = Math.max(0, current + delta);
+    if (next === 0) { delete editCart[id]; }
+    else { editCart[id] = { name: item.itemName, price: item.itemCost, qty: next, type: item.itemType, isComboSnack: !!item.isComboSnack }; }
+    const qtyEl = document.getElementById('edit-qty-' + id);
+    if (qtyEl) qtyEl.textContent = next;
+    const cardEl = document.getElementById('edit-card-' + id);
+    if (cardEl) cardEl.classList.toggle('in-cart', next > 0);
+    renderEditModal();
+  }
+
+  async function saveEditModal() {
+    if (!editOrderId) return;
+    const isVip = document.getElementById('editVipToggle').checked;
+    if (isVip && !document.querySelector('input[name="editVipTeam"]:checked')) {
+      toast('Please select Home or Away team for this VIP order.');
+      return;
+    }
+    const items = Object.entries(editCart)
+      .filter(([, i]) => i.qty > 0)
+      .map(([id, i]) => ({ menuItemId: parseInt(id), quantity: i.qty, priceAtTime: isVip ? 0 : i.price }));
+    if (!items.length) { toast('Order must have at least one item.'); return; }
+    const pm = document.querySelector('input[name="editPayment"]:checked')?.value || 'Cash';
+    const vipTeamEl = document.querySelector('input[name="editVipTeam"]:checked');
+    await fetch(`/api/orders/${editOrderId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        items,
+        isVIP: isVip,
+        vipNote: isVip ? (document.getElementById('editVipNote').value || null) : null,
+        vipTeam: isVip && vipTeamEl ? vipTeamEl.value : null,
+        usedCombo: false,
+        paymentMethod: pm,
+      }),
+    });
+    closeEditModal();
+    toast('Order updated');
+    await loadOrders();
   }
 
   async function deleteOrder(id) {
@@ -554,6 +1144,16 @@
   }
 
   init();
+  renderQueueBanner();
+  if (navigator.onLine) flushQueue();
+</script>
+<div id="offlineBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#dc2626;color:white;text-align:center;padding:.6rem 1rem;font-size:.85rem;font-weight:600;z-index:999">&#x26A0;&#xFE0F; You're offline — some features may be unavailable</div>
+<script>
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+  function _updateOnline() { document.getElementById('offlineBanner').style.display = navigator.onLine ? 'none' : ''; }
+  window.addEventListener('online', _updateOnline);
+  window.addEventListener('offline', _updateOnline);
+  _updateOnline();
 </script>
 </body>
 </html>

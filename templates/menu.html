@@ -1,62 +1,101 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#14532d" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Menu Manager</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: system-ui, sans-serif; background: #f5f5f5; color: #222; }
-    header { background: #1a1a2e; color: white; padding: 1.2rem 2rem; }
+    header { background: #14532d; color: white; padding: 1.2rem 2rem; }
     header h1 { font-size: 1.4rem; font-weight: 600; }
-    .container { max-width: 860px; margin: 2rem auto; padding: 0 1rem; }
+    .container { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
 
     .card { background: white; border-radius: 10px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
     .card h2 { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; color: #444; text-transform: uppercase; letter-spacing: .05em; }
 
-    form { display: grid; grid-template-columns: 1fr 1fr 1fr auto auto; gap: .75rem; align-items: end; }
+    form { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr auto auto; gap: .75rem; align-items: end; }
     .toggle-label { display: flex; flex-direction: column; gap: .3rem; font-size: .8rem; font-weight: 500; color: #555; }
     .toggle-wrap { display: flex; align-items: center; gap: .5rem; padding: .55rem 0; }
     .toggle { appearance: none; width: 36px; height: 20px; background: #ddd; border-radius: 99px; cursor: pointer; transition: background .2s; position: relative; flex-shrink: 0; }
-    .toggle:checked { background: #4f46e5; }
+    .toggle:checked { background: #166534; }
     .toggle::after { content: ''; position: absolute; width: 14px; height: 14px; background: white; border-radius: 50%; top: 3px; left: 3px; transition: left .2s; }
     .toggle:checked::after { left: 19px; }
     .badge-unavail { background: #fef2f2; color: #dc2626; }
     .badge-avail { background: #ecfdf5; color: #059669; }
     label { display: flex; flex-direction: column; gap: .3rem; font-size: .8rem; font-weight: 500; color: #555; }
     input, select { padding: .55rem .75rem; border: 1px solid #ddd; border-radius: 6px; font-size: .95rem; width: 100%; }
-    input:focus, select:focus { outline: 2px solid #4f46e5; border-color: transparent; }
+    input:focus, select:focus { outline: 2px solid #166534; border-color: transparent; }
     button { padding: .55rem 1.2rem; border: none; border-radius: 6px; font-size: .9rem; font-weight: 600; cursor: pointer; white-space: nowrap; }
-    .btn-add  { background: #4f46e5; color: white; }
-    .btn-add:hover { background: #4338ca; }
-    .btn-save { background: #059669; color: white; }
+    .btn-add    { background: #166534; color: white; }
+    .btn-add:hover { background: #14532d; }
+    .btn-save   { background: #059669; color: white; }
     .btn-save:hover { background: #047857; }
     .btn-cancel { background: #e5e7eb; color: #374151; }
-    .btn-del  { background: transparent; color: #dc2626; border: 1px solid #fca5a5; font-size: .8rem; padding: .35rem .7rem; }
+    .btn-cancel:hover { background: #d1d5db; }
+    .btn-del    { background: transparent; color: #dc2626; border: 1px solid #fca5a5; font-size: .8rem; padding: .35rem .7rem; }
     .btn-del:hover { background: #fef2f2; }
-    .btn-edit { background: transparent; color: #4f46e5; border: 1px solid #a5b4fc; font-size: .8rem; padding: .35rem .7rem; }
-    .btn-edit:hover { background: #eef2ff; }
+    .btn-edit   { background: transparent; color: #166534; border: 1px solid #86efac; font-size: .8rem; padding: .35rem .7rem; }
+    .btn-edit:hover { background: #f0fdf4; }
 
     table { width: 100%; border-collapse: collapse; }
     th { text-align: left; font-size: .75rem; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: .05em; padding: .5rem .75rem; border-bottom: 2px solid #f0f0f0; }
-    td { padding: .7rem .75rem; border-bottom: 1px solid #f5f5f5; font-size: .92rem; vertical-align: middle; }
+    td { padding: .6rem .75rem; border-bottom: 1px solid #f5f5f5; font-size: .92rem; vertical-align: middle; }
     tr:last-child td { border-bottom: none; }
-    tr:hover td { background: #fafafa; }
+    tr:not(.editing-row):hover td { background: #fafafa; }
+    .editing-row td { background: #f0f9ff; padding-top: .5rem; padding-bottom: .5rem; }
+    .editing-row input, .editing-row select { padding: .38rem .55rem; font-size: .88rem; }
+    .inline-toggle { appearance: none; width: 32px; height: 18px; background: #ddd; border-radius: 99px; cursor: pointer; transition: background .2s; position: relative; flex-shrink: 0; border: none; padding: 0; }
+    .inline-toggle:checked { background: #166534; }
+    .inline-toggle::after { content: ''; position: absolute; width: 12px; height: 12px; background: white; border-radius: 50%; top: 3px; left: 3px; transition: left .2s; }
+    .inline-toggle:checked::after { left: 17px; }
     .actions { display: flex; gap: .4rem; }
-    .badge { display: inline-block; padding: .2rem .6rem; border-radius: 99px; font-size: .75rem; font-weight: 600; background: #e0e7ff; color: #3730a3; }
+    .badge { display: inline-block; padding: .2rem .6rem; border-radius: 99px; font-size: .75rem; font-weight: 600; background: #dcfce7; color: #166534; }
     .empty { text-align: center; color: #aaa; padding: 2rem; font-size: .9rem; }
 
-    #toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: #1a1a2e; color: white; padding: .7rem 1.2rem; border-radius: 8px; font-size: .85rem; opacity: 0; transition: opacity .3s; pointer-events: none; }
+    /* Tabs */
+    .tabs { display: flex; gap: .4rem; flex-wrap: wrap; margin-bottom: .75rem; }
+    .tab { padding: .4rem 1rem; border-radius: 99px; font-size: .85rem; font-weight: 600; cursor: pointer; border: 1px solid #ddd; background: white; color: #555; transition: all .15s; }
+    .tab.active { background: #166534; color: white; border-color: #166534; }
+    .tab:hover:not(.active) { background: #f5f5ff; border-color: #86efac; }
+    .subtabs { display: flex; gap: .35rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    .subtab { padding: .25rem .75rem; border-radius: 99px; font-size: .78rem; font-weight: 600; cursor: pointer; border: 1px solid #e5e7eb; background: white; color: #6b7280; transition: all .15s; }
+    .subtab.active { background: #dcfce7; color: #166534; border-color: #86efac; }
+    .subtab:hover:not(.active) { background: #f5f5f5; }
+
+    /* Menu types list */
+    .type-list { display: flex; flex-direction: column; gap: .5rem; }
+    .type-row { display: flex; align-items: center; gap: .6rem; }
+    .type-row input { flex: 1; }
+    .type-add-row { display: flex; gap: .6rem; margin-top: .75rem; }
+    .type-add-row input { flex: 1; }
+
+    #toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: #14532d; color: white; padding: .7rem 1.2rem; border-radius: 8px; font-size: .85rem; opacity: 0; transition: opacity .3s; pointer-events: none; }
     #toast.show { opacity: 1; }
   </style>
 </head>
 <body>
 <header>
-  <a href="/" style="color:#a5b4fc;font-size:.85rem;text-decoration:none;display:block;margin-bottom:.4rem;">&#8592; Home</a>
+  <a href="/" style="color:#86efac;font-size:.85rem;text-decoration:none;display:block;margin-bottom:.4rem;">&#8592; Home</a>
   <h1>Menu Manager</h1>
 </header>
 
 <div class="container">
+
+  <!-- Menu Types management -->
+  <div class="card">
+    <h2>Menu Types</h2>
+    <div class="type-list" id="typeList"></div>
+    <div class="type-add-row">
+      <input id="newTypeName" placeholder="e.g. Breakfast" />
+      <button class="btn-add" onclick="addMenuType()">+ Add Type</button>
+    </div>
+  </div>
+
   <!-- Add form -->
   <div class="card">
     <h2>Add Item</h2>
@@ -67,44 +106,34 @@
         <option value="">Select type</option>
         <option value="Cooked">Cooked</option>
         <option value="Fresh">Fresh</option>
+        <option value="Snacks">Snacks</option>
         <option value="Side">Side</option>
         <option value="Drink">Drink</option>
+      </select></label>
+      <label>Menu <select id="addMenuType">
+        <option value="">None</option>
       </select></label>
       <label class="toggle-label">Available
         <div class="toggle-wrap"><input class="toggle" id="addAvailable" type="checkbox" checked /></div>
       </label>
-      <button type="submit" class="btn-add">+ Add</button>
-    </form>
-  </div>
-
-  <!-- Edit form (hidden until editing) -->
-  <div class="card" id="editCard" style="display:none">
-    <h2>Edit Item</h2>
-    <form id="editForm">
-      <label>Name <input id="editName" required /></label>
-      <label>Cost ($) <input id="editCost" type="number" min="0" step="0.01" required /></label>
-      <label>Type <select id="editType" required>
-        <option value="Cooked">Cooked</option>
-        <option value="Fresh">Fresh</option>
-        <option value="Side">Side</option>
-        <option value="Drink">Drink</option>
-      </select></label>
-      <label class="toggle-label">Available
-        <div class="toggle-wrap"><input class="toggle" id="editAvailable" type="checkbox" /></div>
+      <label class="toggle-label">Combo Snack
+        <div class="toggle-wrap"><input class="toggle" id="addComboSide" type="checkbox" /></div>
       </label>
-      <div style="display:flex;gap:.5rem">
-        <button type="submit" class="btn-save">Save</button>
-        <button type="button" class="btn-cancel" onclick="cancelEdit()">Cancel</button>
-      </div>
+      <label class="toggle-label">Combo Main
+        <div class="toggle-wrap"><input class="toggle" id="addComboMain" type="checkbox" /></div>
+      </label>
+      <button type="submit" class="btn-add">+ Add</button>
     </form>
   </div>
 
   <!-- Table -->
   <div class="card">
     <h2>Menu Items</h2>
+    <div class="tabs" id="tabs"></div>
+    <div class="subtabs" id="subtabs"></div>
     <table>
       <thead>
-        <tr><th>Name</th><th>Type</th><th>Cost</th><th>Available</th><th></th></tr>
+        <tr><th>Name</th><th>Type</th><th>Menu</th><th>Cost</th><th>Available</th><th>Combo Snack</th><th>Combo Main</th><th></th></tr>
       </thead>
       <tbody id="menuBody"></tbody>
     </table>
@@ -115,30 +144,208 @@
 
 <script>
   let editingId = null;
+  let menuTypes = [];
+  let activeTypeId = null;
+  let activeItemType = null;
+  let allItems = [];
 
-  async function load() {
-    const res = await fetch('/api/menu');
-    const items = await res.json();
-    const tbody = document.getElementById('menuBody');
-    if (!items.length) {
-      tbody.innerHTML = '<tr><td colspan="4" class="empty">No items yet &mdash; add one above.</td></tr>';
+  async function loadMenuTypes() {
+    const res = await fetch('/api/menu-types');
+    menuTypes = await res.json();
+    if (menuTypes.length && activeTypeId === null) activeTypeId = menuTypes[0].id;
+    renderTypeTabs();
+    renderTypeList();
+    populateMenuTypeSelects();
+  }
+
+  function renderTypeTabs() {
+    document.getElementById('tabs').innerHTML = menuTypes.map(t =>
+      `<button class="tab ${activeTypeId === t.id ? 'active' : ''}" onclick="setActiveType(${t.id})">${esc(t.menuName)}</button>`
+    ).join('');
+  }
+
+  function setActiveType(id) {
+    activeTypeId = id;
+    editingId = null;
+    renderTypeTabs();
+    loadItems();
+  }
+
+  function renderTypeList() {
+    const list = document.getElementById('typeList');
+    if (!menuTypes.length) {
+      list.innerHTML = '<p style="color:#aaa;font-size:.85rem">No menu types yet.</p>';
       return;
     }
-    tbody.innerHTML = items.map(item => `
-      <tr>
+    list.innerHTML = menuTypes.map(t => `
+      <div class="type-row" id="type-row-${t.id}">
+        <input id="type-name-${t.id}" value="${esc(t.menuName)}" />
+        <button class="btn-save" style="padding:.4rem .8rem;font-size:.8rem" onclick="saveMenuType(${t.id})">Save</button>
+        <button class="btn-del" onclick="deleteMenuType(${t.id})">Delete</button>
+      </div>`).join('');
+  }
+
+  function populateMenuTypeSelects() {
+    const options = '<option value="">None</option>' +
+      menuTypes.map(t => `<option value="${t.id}">${esc(t.menuName)}</option>`).join('');
+    document.getElementById('addMenuType').innerHTML = options;
+    // Also refresh inline edit row if one is open
+    const inlineSel = document.getElementById('inline-menuType');
+    if (inlineSel) inlineSel.innerHTML = options;
+  }
+
+  async function addMenuType() {
+    const name = document.getElementById('newTypeName').value.trim();
+    if (!name) return;
+    await fetch('/api/menu-types', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ menuName: name })
+    });
+    document.getElementById('newTypeName').value = '';
+    toast('Menu type added');
+    await loadMenuTypes();
+  }
+
+  async function saveMenuType(id) {
+    const name = document.getElementById(`type-name-${id}`).value.trim();
+    if (!name) return;
+    await fetch(`/api/menu-types/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ menuName: name })
+    });
+    toast('Menu type updated');
+    await loadMenuTypes();
+    loadItems();
+  }
+
+  async function deleteMenuType(id) {
+    if (!confirm('Delete this menu type? Items assigned to it will become unassigned.')) return;
+    await fetch(`/api/menu-types/${id}`, { method: 'DELETE' });
+    if (activeTypeId === id) activeTypeId = null;
+    toast('Menu type deleted');
+    await loadMenuTypes();
+    loadItems();
+  }
+
+  function renderSubtabs() {
+    const types = [...new Set(allItems.map(i => i.itemType))].sort();
+    const el = document.getElementById('subtabs');
+    if (types.length <= 1) { el.innerHTML = ''; return; }
+    el.innerHTML = types.map(t =>
+      `<button class="subtab ${activeItemType === t ? 'active' : ''}" onclick="setActiveItemType('${t}')">${esc(t)}</button>`
+    ).join('');
+  }
+
+  function setActiveItemType(type) {
+    activeItemType = activeItemType === type ? null : type;
+    editingId = null;
+    renderSubtabs();
+    renderItems();
+  }
+
+  function menuTypeOptions(selectedId) {
+    return '<option value="">None</option>' +
+      menuTypes.map(t => `<option value="${t.id}" ${t.id === selectedId ? 'selected' : ''}>${esc(t.menuName)}</option>`).join('');
+  }
+
+  function renderItems() {
+    const items = activeItemType ? allItems.filter(i => i.itemType === activeItemType) : allItems;
+    const tbody = document.getElementById('menuBody');
+    if (!items.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty">No items yet &mdash; add one above.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = items.map(item => {
+      if (item.id === editingId) {
+        return `
+        <tr class="editing-row" id="row-${item.id}">
+          <td><input id="inline-name" value="${esc(item.itemName)}" style="min-width:120px" /></td>
+          <td><select id="inline-type">
+            <option value="Cooked"  ${item.itemType==='Cooked' ?'selected':''}>Cooked</option>
+            <option value="Fresh"   ${item.itemType==='Fresh'  ?'selected':''}>Fresh</option>
+            <option value="Snacks"  ${item.itemType==='Snacks' ?'selected':''}>Snacks</option>
+            <option value="Side"    ${item.itemType==='Side'   ?'selected':''}>Side</option>
+            <option value="Drink"   ${item.itemType==='Drink'  ?'selected':''}>Drink</option>
+          </select></td>
+          <td><select id="inline-menuType">${menuTypeOptions(item.menuTypeId)}</select></td>
+          <td><input id="inline-cost" type="number" min="0" step="0.01" value="${item.itemCost.toFixed(2)}" style="width:90px" /></td>
+          <td><input class="inline-toggle" id="inline-available" type="checkbox" ${item.isAvailable ? 'checked' : ''} /></td>
+          <td><input class="inline-toggle" id="inline-comboSide" type="checkbox" ${item.isComboSnack ? 'checked' : ''} /></td>
+          <td><input class="inline-toggle" id="inline-comboMain" type="checkbox" ${item.isComboMain ? 'checked' : ''} /></td>
+          <td><div class="actions">
+            <button class="btn-save" style="padding:.35rem .7rem;font-size:.8rem" onclick="saveInlineEdit(${item.id})">Save</button>
+            <button class="btn-cancel" style="padding:.35rem .7rem;font-size:.8rem" onclick="cancelEdit()">Cancel</button>
+          </div></td>
+        </tr>`;
+      }
+      const menuLabel = item.menuType ? esc(item.menuType.menuName) : '<span style="color:#bbb">—</span>';
+      return `
+      <tr id="row-${item.id}">
         <td>${esc(item.itemName)}</td>
         <td><span class="badge">${esc(item.itemType)}</span></td>
+        <td>${menuLabel}</td>
         <td>$${item.itemCost.toFixed(2)}</td>
         <td><span class="badge ${item.isAvailable ? 'badge-avail' : 'badge-unavail'}">${item.isAvailable ? 'Yes' : 'No'}</span></td>
+        <td><span class="badge ${item.isComboSnack ? 'badge-avail' : 'badge-unavail'}">${item.isComboSnack ? 'Yes' : 'No'}</span></td>
+        <td><span class="badge ${item.isComboMain ? 'badge-avail' : 'badge-unavail'}">${item.isComboMain ? 'Yes' : 'No'}</span></td>
         <td><div class="actions">
-          <button class="btn-edit" onclick="startEdit(${item.id}, '${esc(item.itemName)}', ${item.itemCost}, '${esc(item.itemType)}', ${item.isAvailable})">Edit</button>
+          <button class="btn-edit" onclick="startEdit(${item.id})">Edit</button>
           <button class="btn-del" onclick="deleteItem(${item.id})">Delete</button>
         </div></td>
-      </tr>`).join('');
+      </tr>`;
+    }).join('');
+
+    // Focus the name field if an edit row was just rendered
+    if (editingId) {
+      const nameEl = document.getElementById('inline-name');
+      if (nameEl) nameEl.focus();
+    }
+  }
+
+  async function loadItems({ preserveSubfilter = false } = {}) {
+    const url = activeTypeId !== null ? `/api/menu?menuTypeId=${activeTypeId}` : '/api/menu';
+    const res = await fetch(url);
+    allItems = await res.json();
+    if (!preserveSubfilter) activeItemType = null;
+    renderSubtabs();
+    renderItems();
+  }
+
+  function startEdit(id) {
+    editingId = id;
+    renderItems();
+  }
+
+  function cancelEdit() {
+    editingId = null;
+    renderItems();
+  }
+
+  async function saveInlineEdit(id) {
+    const menuTypeVal = document.getElementById('inline-menuType').value;
+    await fetch(`/api/menu/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        itemName: document.getElementById('inline-name').value,
+        itemCost: parseFloat(document.getElementById('inline-cost').value),
+        itemType: document.getElementById('inline-type').value,
+        isAvailable: document.getElementById('inline-available').checked,
+        menuTypeId: menuTypeVal ? parseInt(menuTypeVal) : null,
+        isComboSnack: document.getElementById('inline-comboSide').checked,
+        isComboMain: document.getElementById('inline-comboMain').checked,
+      })
+    });
+    editingId = null;
+    toast('Item updated');
+    loadItems({ preserveSubfilter: true });
   }
 
   document.getElementById('addForm').addEventListener('submit', async e => {
     e.preventDefault();
+    const menuTypeId = document.getElementById('addMenuType').value;
     await fetch('/api/menu', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -147,50 +354,24 @@
         itemCost: parseFloat(document.getElementById('addCost').value),
         itemType: document.getElementById('addType').value,
         isAvailable: document.getElementById('addAvailable').checked,
+        menuTypeId: menuTypeId ? parseInt(menuTypeId) : null,
+        isComboSnack: document.getElementById('addComboSide').checked,
+        isComboMain: document.getElementById('addComboMain').checked,
       })
     });
     e.target.reset();
+    document.getElementById('addAvailable').checked = true;
+    document.getElementById('addComboSide').checked = false;
+    document.getElementById('addComboMain').checked = false;
     toast('Item added');
-    load();
-  });
-
-  function startEdit(id, name, cost, type, available) {
-    editingId = id;
-    document.getElementById('editName').value = name;
-    document.getElementById('editCost').value = cost;
-    document.getElementById('editType').value = type;
-    document.getElementById('editAvailable').checked = available;
-    document.getElementById('editCard').style.display = '';
-    document.getElementById('editCard').scrollIntoView({ behavior: 'smooth' });
-  }
-
-  function cancelEdit() {
-    editingId = null;
-    document.getElementById('editCard').style.display = 'none';
-  }
-
-  document.getElementById('editForm').addEventListener('submit', async e => {
-    e.preventDefault();
-    await fetch(`/api/menu/${editingId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        itemName: document.getElementById('editName').value,
-        itemCost: parseFloat(document.getElementById('editCost').value),
-        itemType: document.getElementById('editType').value,
-        isAvailable: document.getElementById('editAvailable').checked,
-      })
-    });
-    cancelEdit();
-    toast('Item updated');
-    load();
+    loadItems();
   });
 
   async function deleteItem(id) {
     if (!confirm('Delete this item?')) return;
     await fetch(`/api/menu/${id}`, { method: 'DELETE' });
     toast('Item deleted');
-    load();
+    loadItems();
   }
 
   function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -202,7 +383,20 @@
     setTimeout(() => t.classList.remove('show'), 2500);
   }
 
-  load();
+  async function init() {
+    await loadMenuTypes();
+    loadItems();
+  }
+
+  init();
+</script>
+<div id="offlineBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#dc2626;color:white;text-align:center;padding:.6rem 1rem;font-size:.85rem;font-weight:600;z-index:999">&#x26A0;&#xFE0F; You're offline — some features may be unavailable</div>
+<script>
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+  function _updateOnline() { document.getElementById('offlineBanner').style.display = navigator.onLine ? 'none' : ''; }
+  window.addEventListener('online', _updateOnline);
+  window.addEventListener('offline', _updateOnline);
+  _updateOnline();
 </script>
 </body>
 </html>

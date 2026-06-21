@@ -1,39 +1,50 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/weather-icons/2.0.10/css/weather-icons.min.css" />
+  <meta name="theme-color" content="#14532d" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Event Manager</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: system-ui, sans-serif; background: #f5f5f5; color: #222; }
-    header { background: #1a1a2e; color: white; padding: 1.2rem 2rem; }
-    header a { color: #a5b4fc; font-size: .85rem; text-decoration: none; display: block; margin-bottom: .4rem; }
+    header { background: #14532d; color: white; padding: 1.2rem 2rem; }
+    header a { color: #86efac; font-size: .85rem; text-decoration: none; display: block; margin-bottom: .4rem; }
     header h1 { font-size: 1.4rem; font-weight: 600; }
-    .container { max-width: 860px; margin: 2rem auto; padding: 0 1rem; }
+    .container { max-width: 960px; margin: 2rem auto; padding: 0 1rem; }
 
     .card { background: white; border-radius: 10px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
     .card h2 { font-size: .75rem; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 1rem; }
 
-    form { display: grid; grid-template-columns: 1fr 1fr 1fr auto auto; gap: .75rem; align-items: end; }
+    .form-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: .75rem; }
+    .form-grid .span2 { grid-column: span 2; }
+    .form-grid .span4 { grid-column: span 4; }
+    .form-row-actions { display: flex; gap: .5rem; align-items: flex-end; margin-top: .75rem; }
+
     label { display: flex; flex-direction: column; gap: .3rem; font-size: .8rem; font-weight: 500; color: #555; }
-    input, select { padding: .55rem .75rem; border: 1px solid #ddd; border-radius: 6px; font-size: .95rem; width: 100%; }
-    input:focus, select:focus { outline: 2px solid #4f46e5; border-color: transparent; }
+    input, select, textarea { padding: .55rem .75rem; border: 1px solid #ddd; border-radius: 6px; font-size: .95rem; width: 100%; font-family: inherit; }
+    textarea { resize: vertical; min-height: 64px; }
+    input:focus, select:focus, textarea:focus { outline: 2px solid #166534; border-color: transparent; }
     button { padding: .55rem 1.2rem; border: none; border-radius: 6px; font-size: .9rem; font-weight: 600; cursor: pointer; white-space: nowrap; }
-    .btn-add    { background: #4f46e5; color: white; }
-    .btn-add:hover { background: #4338ca; }
+    .btn-add    { background: #166534; color: white; }
+    .btn-add:hover { background: #14532d; }
     .btn-save   { background: #059669; color: white; }
     .btn-save:hover { background: #047857; }
     .btn-cancel { background: #e5e7eb; color: #374151; }
+    .btn-cancel:hover { background: #d1d5db; }
     .btn-del    { background: transparent; color: #dc2626; border: 1px solid #fca5a5; font-size: .8rem; padding: .35rem .7rem; }
     .btn-del:hover { background: #fef2f2; }
-    .btn-edit   { background: transparent; color: #4f46e5; border: 1px solid #a5b4fc; font-size: .8rem; padding: .35rem .7rem; }
-    .btn-edit:hover { background: #eef2ff; }
+    .btn-edit   { background: transparent; color: #166534; border: 1px solid #86efac; font-size: .8rem; padding: .35rem .7rem; }
+    .btn-edit:hover { background: #f0fdf4; }
 
     .toggle-label { display: flex; flex-direction: column; gap: .3rem; font-size: .8rem; font-weight: 500; color: #555; }
     .toggle-wrap { display: flex; align-items: center; gap: .5rem; padding: .55rem 0; }
     .toggle { appearance: none; width: 36px; height: 20px; background: #ddd; border-radius: 99px; cursor: pointer; transition: background .2s; position: relative; flex-shrink: 0; }
-    .toggle:checked { background: #4f46e5; }
+    .toggle:checked { background: #166534; }
     .toggle::after { content: ''; position: absolute; width: 14px; height: 14px; background: white; border-radius: 50%; top: 3px; left: 3px; transition: left .2s; }
     .toggle:checked::after { left: 19px; }
 
@@ -46,9 +57,23 @@
     .badge { display: inline-block; padding: .2rem .6rem; border-radius: 99px; font-size: .75rem; font-weight: 600; }
     .badge-active   { background: #ecfdf5; color: #059669; }
     .badge-inactive { background: #fef2f2; color: #dc2626; }
+    .badge-menu { background: #dcfce7; color: #166534; }
     .empty { text-align: center; color: #aaa; padding: 2rem; font-size: .9rem; }
+    .meetNotes-preview { font-size: .78rem; color: #9ca3af; max-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    #toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: #1a1a2e; color: white; padding: .7rem 1.2rem; border-radius: 8px; font-size: .85rem; opacity: 0; transition: opacity .3s; pointer-events: none; max-width: 320px; }
+    .prep-fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: .5rem; }
+    .prep-row { display: flex; flex-direction: column; gap: .25rem; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 7px; padding: .5rem .65rem; }
+    .prep-row .prep-name { font-size: .78rem; font-weight: 600; color: #374151; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .prep-row input { padding: .35rem .55rem; border: 1px solid #ddd; border-radius: 5px; font-size: .88rem; width: 100%; }
+    .prep-row input:focus { outline: 2px solid #166534; border-color: transparent; }
+
+    .weather-tile { display: flex; align-items: center; gap: .6rem; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: .55rem .85rem; font-size: .9rem; color: #0c4a6e; min-height: 38px; }
+    .weather-tile .wt-icon { font-size: 1.4rem; flex-shrink: 0; }
+    .weather-tile .wt-none { color: #9ca3af; font-style: italic; font-size: .85rem; }
+    .btn-weather { background: transparent; color: #0284c7; border: 1px solid #7dd3fc; font-size: .8rem; padding: .35rem .7rem; }
+    .btn-weather:hover { background: #f0f9ff; }
+
+    #toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: #14532d; color: white; padding: .7rem 1.2rem; border-radius: 8px; font-size: .85rem; opacity: 0; transition: opacity .3s; pointer-events: none; max-width: 320px; }
     #toast.show { opacity: 1; }
     #toast.warn { background: #dc2626; }
   </style>
@@ -64,13 +89,30 @@
   <div class="card">
     <h2>Add Event</h2>
     <form id="addForm">
-      <label>Name <input id="addName" placeholder="e.g. Summer Gala" /></label>
-      <label>Date <input id="addDate" type="date" required /></label>
-      <label>Size <input id="addSize" placeholder="e.g. 50" /></label>
-      <label class="toggle-label">Active
-        <div class="toggle-wrap"><input class="toggle" id="addActive" type="checkbox" checked /></div>
-      </label>
-      <button type="submit" class="btn-add">+ Add</button>
+      <div class="form-grid">
+        <label class="span2">Name <input id="addName" placeholder="e.g. Summer Swim Meet" /></label>
+        <label>Date <input id="addDate" type="date" required /></label>
+        <label>Menu <select id="addMenuType" required onchange="prefillAddPrep()">
+          <option value="">Select menu</option>
+        </select></label>
+
+        <label>Home Team Size <input id="addHomeSize" type="number" min="0" placeholder="e.g. 80" /></label>
+        <label>Away Team Size <input id="addAwaySize" type="number" min="0" placeholder="e.g. 60" /></label>
+        <label>Seed Money ($) <input id="addSeedMoney" type="number" min="0" step="0.01" placeholder="0.00" /></label>
+        <label>Meet Cost ($) <input id="addMeetCost" type="number" min="0" step="0.01" placeholder="0.00" /></label>
+        <label class="toggle-label">Active
+          <div class="toggle-wrap"><input class="toggle" id="addActive" type="checkbox" checked /></div>
+        </label>
+
+        <label class="span4">Notes <textarea id="addNotes" placeholder="Any additional details…"></textarea></label>
+        <div class="span4" id="addPrepSection" style="display:none">
+          <div style="font-size:.8rem;font-weight:500;color:#555;margin-bottom:.5rem">Prep Quantities <span style="font-weight:400;color:#9ca3af">(Fresh items — enter how many you have prepped)</span></div>
+          <div id="addPrepFields" class="prep-fields"></div>
+        </div>
+      </div>
+      <div class="form-row-actions">
+        <button type="submit" class="btn-add">+ Add Event</button>
+      </div>
     </form>
   </div>
 
@@ -78,13 +120,34 @@
   <div class="card" id="editCard" style="display:none">
     <h2>Edit Event</h2>
     <form id="editForm">
-      <label>Name <input id="editName" /></label>
-      <label>Date <input id="editDate" type="date" required /></label>
-      <label>Size <input id="editSize" /></label>
-      <label class="toggle-label">Active
-        <div class="toggle-wrap"><input class="toggle" id="editActive" type="checkbox" /></div>
-      </label>
-      <div style="display:flex;gap:.5rem">
+      <div class="form-grid">
+        <label class="span2">Name <input id="editName" /></label>
+        <label>Date <input id="editDate" type="date" required /></label>
+        <label>Menu <select id="editMenuType" required onchange="prefillEditPrep()">
+          <option value="">Select menu</option>
+        </select></label>
+
+        <label>Home Team Size <input id="editHomeSize" type="number" min="0" placeholder="e.g. 80" /></label>
+        <label>Away Team Size <input id="editAwaySize" type="number" min="0" placeholder="e.g. 60" /></label>
+        <label>Weather
+          <div class="weather-tile" id="editWeatherTile">
+            <span class="wt-icon" id="editWeatherIcon"></span>
+            <span id="editWeatherText" class="wt-none">Will be auto-populated on deactivate</span>
+          </div>
+        </label>
+        <label>Seed Money ($) <input id="editSeedMoney" type="number" min="0" step="0.01" placeholder="0.00" /></label>
+        <label>Meet Cost ($) <input id="editMeetCost" type="number" min="0" step="0.01" placeholder="0.00" /></label>
+        <label class="toggle-label">Active
+          <div class="toggle-wrap"><input class="toggle" id="editActive" type="checkbox" /></div>
+        </label>
+
+        <label class="span4">Notes <textarea id="editNotes" placeholder="Any additional details…"></textarea></label>
+        <div class="span4" id="editPrepSection" style="display:none">
+          <div style="font-size:.8rem;font-weight:500;color:#555;margin-bottom:.5rem">Prep Quantities <span style="font-weight:400;color:#9ca3af">(Fresh items — enter how many you have prepped)</span></div>
+          <div id="editPrepFields" class="prep-fields"></div>
+        </div>
+      </div>
+      <div class="form-row-actions">
         <button type="submit" class="btn-save">Save</button>
         <button type="button" class="btn-cancel" onclick="cancelEdit()">Cancel</button>
       </div>
@@ -96,7 +159,7 @@
     <h2>Events</h2>
     <table>
       <thead>
-        <tr><th>Name</th><th>Date</th><th>Size</th><th>Status</th><th></th></tr>
+        <tr><th>Name</th><th>Date</th><th>Home</th><th>Away</th><th>Weather</th><th>Seed Money</th><th>Meet Cost</th><th>Menu</th><th>Status</th><th></th></tr>
       </thead>
       <tbody id="eventsBody"></tbody>
     </table>
@@ -106,27 +169,113 @@
 <div id="toast"></div>
 
 <script>
+  const WEATHER_ICONS = {
+    'clear sky':        'wi-day-sunny',
+    'mostly clear':     'wi-day-sunny-overcast',
+    'partly cloudy':    'wi-day-cloudy',
+    'overcast':         'wi-cloudy',
+    'foggy':            'wi-fog',
+    'light drizzle':    'wi-sprinkle',
+    'drizzle':          'wi-sprinkle',
+    'heavy drizzle':    'wi-showers',
+    'light rain':       'wi-rain-mix',
+    'rain':             'wi-rain',
+    'heavy rain':       'wi-rain-wind',
+    'light snow':       'wi-snow',
+    'snow':             'wi-snow',
+    'heavy snow':       'wi-snow-wind',
+    'snow grains':      'wi-snow',
+    'light showers':    'wi-showers',
+    'showers':          'wi-showers',
+    'heavy showers':    'wi-storm-showers',
+    'snow showers':     'wi-snow',
+    'heavy snow showers': 'wi-snow-wind',
+    'thunderstorm':     'wi-thunderstorm',
+    'thunderstorm w/ hail': 'wi-hail',
+  };
+  function weatherIcon(condition) {
+    if (!condition) return '';
+    const lower = condition.toLowerCase();
+    const key = Object.keys(WEATHER_ICONS).find(k => lower.includes(k)) || null;
+    const cls = key ? WEATHER_ICONS[key] : 'wi-na';
+    return `<i class="wi ${cls}" style="font-size:1.15rem;vertical-align:middle;margin-right:.35rem;color:#4b5563"></i>`;
+  }
+
   let editingId = null;
+
+  async function loadMenuTypes() {
+    const res = await fetch('/api/menu-types');
+    const types = await res.json();
+    const options = types.map(t => `<option value="${t.id}">${esc(t.menuName)}</option>`).join('');
+    const base = '<option value="">Select menu</option>' + options;
+    document.getElementById('addMenuType').innerHTML = base;
+    document.getElementById('editMenuType').innerHTML = base;
+  }
 
   async function load() {
     const res = await fetch('/api/events');
     const events = await res.json();
     const tbody = document.getElementById('eventsBody');
     if (!events.length) {
-      tbody.innerHTML = '<tr><td colspan="5" class="empty">No events yet &mdash; add one above.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9" class="empty">No events yet &mdash; add one above.</td></tr>';
       return;
     }
-    tbody.innerHTML = events.map(ev => `
+    tbody.innerHTML = events.map(ev => {
+      const menuLabel = ev.menuType
+        ? `<span class="badge badge-menu">${esc(ev.menuType.menuName)}</span>`
+        : '<span style="color:#bbb">—</span>';
+      return `
       <tr>
-        <td>${esc(ev.eventName || '&mdash;')}</td>
+        <td>${esc(ev.eventName || '—')}</td>
         <td>${formatDate(ev.eventDate)}</td>
-        <td>${esc(ev.eventSize || '&mdash;')}</td>
+        <td>${esc(ev.homeTeamSize || '—')}</td>
+        <td>${esc(ev.awayTeamSize || '—')}</td>
+        <td>${ev.meetWeather ? weatherIcon(ev.meetWeather) + esc(ev.meetWeather) : '—'}</td>
+        <td>${menuLabel}</td>
         <td><span class="badge ${ev.isActive ? 'badge-active' : 'badge-inactive'}">${ev.isActive ? 'Active' : 'Inactive'}</span></td>
         <td><div class="actions">
-          <button class="btn-edit" onclick="startEdit(${ev.id}, '${esc(ev.eventName || '')}', '${ev.eventDate}', '${esc(ev.eventSize || '')}', ${ev.isActive})">Edit</button>
-          <button class="btn-del" onclick="deleteEvent(${ev.id})">Delete</button>
+          <button class="btn-edit" onclick="startEdit(${ev.id})">Edit</button>
+          ${ev.eventDate < today ? `<button class="btn-weather" onclick="updateWeather(${ev.id})">&#x1F4E1; Weather</button>` : ''}
+          <button class="btn-del"  onclick="deleteEvent(${ev.id})">Delete</button>
         </div></td>
-      </tr>`).join('');
+      </tr>`;
+    }).join('');
+  }
+
+  // Store events for edit lookup
+  let eventsCache = [];
+  const _origLoad = load;
+  async function load() {
+    const res = await fetch('/api/events');
+    eventsCache = await res.json();
+    const tbody = document.getElementById('eventsBody');
+    if (!eventsCache.length) {
+      tbody.innerHTML = '<tr><td colspan="9" class="empty">No events yet &mdash; add one above.</td></tr>';
+      return;
+    }
+    const today = new Date().toISOString().slice(0, 10);
+    tbody.innerHTML = eventsCache.map(ev => {
+      const menuLabel = ev.menuType
+        ? `<span class="badge badge-menu">${esc(ev.menuType.menuName)}</span>`
+        : '<span style="color:#bbb">—</span>';
+      return `
+      <tr>
+        <td>${esc(ev.eventName || '—')}</td>
+        <td>${formatDate(ev.eventDate)}</td>
+        <td>${esc(ev.homeTeamSize || '—')}</td>
+        <td>${esc(ev.awayTeamSize || '—')}</td>
+        <td>${ev.meetWeather ? weatherIcon(ev.meetWeather) + esc(ev.meetWeather) : '—'}</td>
+        <td>${ev.eventSeedMoney != null ? '$' + parseFloat(ev.eventSeedMoney).toFixed(2) : '—'}</td>
+        <td>${ev.meetCost != null ? '$' + parseFloat(ev.meetCost).toFixed(2) : '—'}</td>
+        <td>${menuLabel}</td>
+        <td><span class="badge ${ev.isActive ? 'badge-active' : 'badge-inactive'}">${ev.isActive ? 'Active' : 'Inactive'}</span></td>
+        <td><div class="actions">
+          <button class="btn-edit" onclick="startEdit(${ev.id})">Edit</button>
+          ${ev.eventDate < today ? `<button class="btn-weather" onclick="updateWeather(${ev.id})">&#x1F4E1; Weather</button>` : ''}
+          <button class="btn-del"  onclick="deleteEvent(${ev.id})">Delete</button>
+        </div></td>
+      </tr>`;
+    }).join('');
   }
 
   document.getElementById('addForm').addEventListener('submit', async e => {
@@ -135,31 +284,75 @@
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        eventName: document.getElementById('addName').value || null,
-        eventDate: document.getElementById('addDate').value,
-        eventSize: document.getElementById('addSize').value || null,
-        isActive: document.getElementById('addActive').checked,
+        eventName:      document.getElementById('addName').value || null,
+        eventDate:      document.getElementById('addDate').value,
+        homeTeamSize:   document.getElementById('addHomeSize').value ? parseInt(document.getElementById('addHomeSize').value) : null,
+        awayTeamSize:   document.getElementById('addAwaySize').value ? parseInt(document.getElementById('addAwaySize').value) : null,
+        meetNotes:      document.getElementById('addNotes').value || null,
+        meetPrep:       collectPrepValue('addPrepFields'),
+        eventSeedMoney: document.getElementById('addSeedMoney').value ? parseFloat(document.getElementById('addSeedMoney').value) : null,
+        meetCost:       document.getElementById('addMeetCost').value ? parseFloat(document.getElementById('addMeetCost').value) : null,
+        isActive:       document.getElementById('addActive').checked,
+        menuTypeID:     parseInt(document.getElementById('addMenuType').value),
       })
     });
     e.target.reset();
     document.getElementById('addActive').checked = true;
+    document.getElementById('addPrepSection').style.display = 'none';
+    document.getElementById('addPrepFields').innerHTML = '';
     toast('Event added');
     load();
   });
 
-  function startEdit(id, name, date, size, active) {
+  function startEdit(id) {
+    const ev = eventsCache.find(e => e.id === id);
+    if (!ev) return;
     editingId = id;
-    document.getElementById('editName').value = name;
-    document.getElementById('editDate').value = date;
-    document.getElementById('editSize').value = size;
-    document.getElementById('editActive').checked = active;
+    document.getElementById('editName').value     = ev.eventName || '';
+    document.getElementById('editDate').value     = ev.eventDate;
+    document.getElementById('editHomeSize').value = ev.homeTeamSize || '';
+    document.getElementById('editAwaySize').value = ev.awayTeamSize || '';
+    const wiText = document.getElementById('editWeatherText');
+    const wiIcon = document.getElementById('editWeatherIcon');
+    if (ev.meetWeather) {
+      wiIcon.innerHTML = weatherIcon(ev.meetWeather);
+      wiText.textContent = ev.meetWeather;
+      wiText.classList.remove('wt-none');
+    } else {
+      wiIcon.innerHTML = '';
+      wiText.textContent = 'Will be auto-populated on deactivate';
+      wiText.classList.add('wt-none');
+    }
+    document.getElementById('editSeedMoney').value = ev.eventSeedMoney ?? '';
+    document.getElementById('editMeetCost').value  = ev.meetCost ?? '';
+    document.getElementById('editNotes').value     = ev.meetNotes || '';
+    document.getElementById('editMenuType').value = ev.menuTypeID ?? '';
+    document.getElementById('editActive').checked = ev.isActive;
+    prefillEditPrep(ev.meetPrep || '');
     document.getElementById('editCard').style.display = '';
     document.getElementById('editCard').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  async function updateWeather(id) {
+    const btn = event.target;
+    btn.textContent = 'Fetching…';
+    btn.disabled = true;
+    const res = await fetch(`/api/events/${id}/refresh-weather`, { method: 'POST' });
+    if (res.ok) {
+      toast('Weather updated');
+      load();
+    } else {
+      toast('Could not fetch weather for this date', true);
+      btn.textContent = '📡 Weather';
+      btn.disabled = false;
+    }
   }
 
   function cancelEdit() {
     editingId = null;
     document.getElementById('editCard').style.display = 'none';
+    document.getElementById('editPrepSection').style.display = 'none';
+    document.getElementById('editPrepFields').innerHTML = '';
   }
 
   document.getElementById('editForm').addEventListener('submit', async e => {
@@ -168,10 +361,16 @@
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        eventName: document.getElementById('editName').value || null,
-        eventDate: document.getElementById('editDate').value,
-        eventSize: document.getElementById('editSize').value || null,
-        isActive: document.getElementById('editActive').checked,
+        eventName:    document.getElementById('editName').value || null,
+        eventDate:    document.getElementById('editDate').value,
+        homeTeamSize: document.getElementById('editHomeSize').value ? parseInt(document.getElementById('editHomeSize').value) : null,
+        awayTeamSize: document.getElementById('editAwaySize').value ? parseInt(document.getElementById('editAwaySize').value) : null,
+        meetNotes:      document.getElementById('editNotes').value || null,
+        meetPrep:       collectPrepValue('editPrepFields'),
+        eventSeedMoney: document.getElementById('editSeedMoney').value ? parseFloat(document.getElementById('editSeedMoney').value) : null,
+        meetCost:       document.getElementById('editMeetCost').value ? parseFloat(document.getElementById('editMeetCost').value) : null,
+        isActive:       document.getElementById('editActive').checked,
+        menuTypeID:     parseInt(document.getElementById('editMenuType').value),
       })
     });
     cancelEdit();
@@ -192,7 +391,7 @@
   }
 
   function formatDate(d) {
-    if (!d) return '&mdash;';
+    if (!d) return '—';
     const [y, m, day] = d.split('-');
     return `${m}/${day}/${y}`;
   }
@@ -207,7 +406,71 @@
     setTimeout(() => { t.classList.remove('show'); t.classList.remove('warn'); }, warn ? 4000 : 2500);
   }
 
-  load();
+  async function fetchFreshItems(menuTypeId) {
+    const items = await fetch(`/api/menu?menuTypeId=${menuTypeId}`).then(r => r.json());
+    return items.filter(i => i.itemType === 'Fresh' && i.isAvailable);
+  }
+
+  function renderPrepFields(containerId, freshItems, existingPrep) {
+    // Parse existing meetPrep string back into a map: { itemName -> value }
+    const existing = {};
+    if (existingPrep) {
+      existingPrep.split('\n').forEach(line => {
+        const idx = line.indexOf(': ');
+        if (idx !== -1) existing[line.slice(0, idx).trim()] = line.slice(idx + 2).trim();
+      });
+    }
+    const container = document.getElementById(containerId);
+    container.innerHTML = freshItems.map(item => `
+      <div class="prep-row">
+        <span class="prep-name" title="${esc(item.itemName)}">${esc(item.itemName)}</span>
+        <input type="text" placeholder="qty / amount" data-item="${esc(item.itemName)}"
+               value="${esc(existing[item.itemName] || '')}" />
+      </div>`).join('');
+  }
+
+  function collectPrepValue(containerId) {
+    const inputs = document.querySelectorAll(`#${containerId} input[data-item]`);
+    return Array.from(inputs)
+      .filter(i => i.value.trim())
+      .map(i => `${i.dataset.item}: ${i.value.trim()}`)
+      .join('\n') || null;
+  }
+
+  async function prefillAddPrep() {
+    const menuTypeId = document.getElementById('addMenuType').value;
+    const section = document.getElementById('addPrepSection');
+    if (!menuTypeId) { section.style.display = 'none'; return; }
+    const fresh = await fetchFreshItems(menuTypeId);
+    if (!fresh.length) { section.style.display = 'none'; return; }
+    renderPrepFields('addPrepFields', fresh, null);
+    section.style.display = '';
+  }
+
+  async function prefillEditPrep(existingPrep) {
+    const menuTypeId = document.getElementById('editMenuType').value;
+    const section = document.getElementById('editPrepSection');
+    if (!menuTypeId) { section.style.display = 'none'; return; }
+    const fresh = await fetchFreshItems(menuTypeId);
+    if (!fresh.length) { section.style.display = 'none'; return; }
+    renderPrepFields('editPrepFields', fresh, existingPrep || null);
+    section.style.display = '';
+  }
+
+  async function init() {
+    await loadMenuTypes();
+    load();
+  }
+
+  init();
+</script>
+<div id="offlineBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#dc2626;color:white;text-align:center;padding:.6rem 1rem;font-size:.85rem;font-weight:600;z-index:999">&#x26A0;&#xFE0F; You're offline — some features may be unavailable</div>
+<script>
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+  function _updateOnline() { document.getElementById('offlineBanner').style.display = navigator.onLine ? 'none' : ''; }
+  window.addEventListener('online', _updateOnline);
+  window.addEventListener('offline', _updateOnline);
+  _updateOnline();
 </script>
 </body>
 </html>

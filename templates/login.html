@@ -1,0 +1,118 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#14532d" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Farmington Glen Concessions &mdash; Sign In</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #f5f5f5; color: #222; min-height: 100vh; display: flex; flex-direction: column; }
+    header { background: #14532d; color: white; padding: 1.2rem 2rem; }
+    header h1 { font-size: 1.4rem; font-weight: 600; }
+    .center { flex: 1; display: flex; align-items: center; justify-content: center; padding: 2rem 1rem; }
+    .card { background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 1px 8px rgba(0,0,0,0.1); width: 100%; max-width: 360px; }
+    .card h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: .35rem; }
+    .card p { font-size: .85rem; color: #666; margin-bottom: 1.5rem; }
+    .field { margin-bottom: 1rem; }
+    label { display: block; font-size: .8rem; font-weight: 600; color: #555; margin-bottom: .35rem; }
+    input[type="text"], input[type="password"] { width: 100%; padding: .6rem .75rem; border: 1.5px solid #e5e7eb; border-radius: 8px; font-size: 1rem; outline: none; transition: border-color .15s; }
+    input[type="text"]:focus, input[type="password"]:focus { border-color: #166534; }
+    .pw-wrap { position: relative; }
+    .pw-wrap input { padding-right: 2.75rem; }
+    .pw-toggle { position: absolute; right: .65rem; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #9ca3af; padding: .2rem; line-height: 1; }
+    .pw-toggle:hover { color: #166534; }
+    .btn { width: 100%; margin-top: .25rem; padding: .7rem; background: #166534; color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; }
+    .btn:hover { background: #14532d; }
+    .btn:disabled { background: #86efac; cursor: not-allowed; }
+    .error { margin-top: .75rem; background: #fef2f2; border: 1px solid #fca5a5; color: #dc2626; border-radius: 8px; padding: .6rem .85rem; font-size: .85rem; display: none; }
+    .glemons-banner { text-align: center; margin-bottom: 1.5rem; }
+    .glemons-banner img { max-width: 100%; height: 110px; object-fit: contain; }
+    .glemons-banner p { font-size: .78rem; color: #9ca3af; margin-top: .35rem; font-style: italic; }
+  </style>
+</head>
+<body>
+<header><h1>Farmington Glen Concessions</h1></header>
+<div class="center">
+  <div class="card">
+    <div class="glemons-banner">
+      <img src="/static/glemons.png" alt="The Glemons" />
+      <p>2026 Season &mdash; The Glemons</p>
+    </div>
+    <h2>Sign in</h2>
+    <p>Enter your credentials to continue.</p>
+    <div class="field">
+      <label for="username">Username</label>
+      <input type="text" id="username" placeholder="Username" autofocus autocomplete="username" />
+    </div>
+    <div class="field">
+      <label for="pw">Password</label>
+      <div class="pw-wrap">
+        <input type="password" id="pw" placeholder="••••••••" autocomplete="current-password" />
+        <button class="pw-toggle" type="button" onclick="togglePw()" id="pwToggle" aria-label="Show password">
+          <!-- eye icon -->
+          <svg id="eyeIcon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+          <svg id="eyeOffIcon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+            <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+            <line x1="1" y1="1" x2="23" y2="23"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <button class="btn" id="btn" onclick="login()">Sign in</button>
+    <div class="error" id="err">Incorrect username or password.</div>
+  </div>
+</div>
+<script>
+  document.getElementById('pw').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+  document.getElementById('username').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('pw').focus(); });
+
+  function togglePw() {
+    const input = document.getElementById('pw');
+    const isHidden = input.type === 'password';
+    input.type = isHidden ? 'text' : 'password';
+    document.getElementById('eyeIcon').style.display = isHidden ? 'none' : '';
+    document.getElementById('eyeOffIcon').style.display = isHidden ? '' : 'none';
+  }
+
+  async function login() {
+    const username = document.getElementById('username').value.trim();
+    const pw = document.getElementById('pw').value.trim();
+    if (!username || !pw) return;
+    const btn = document.getElementById('btn');
+    btn.disabled = true;
+    btn.textContent = 'Signing in…';
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password: pw }),
+    });
+    if (res.ok) {
+      const params = new URLSearchParams(location.search);
+      location.href = params.get('next') || '/';
+    } else {
+      document.getElementById('err').style.display = 'block';
+      document.getElementById('pw').value = '';
+      document.getElementById('pw').focus();
+      btn.disabled = false;
+      btn.textContent = 'Sign in';
+    }
+  }
+</script>
+<div id="offlineBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#dc2626;color:white;text-align:center;padding:.6rem 1rem;font-size:.85rem;font-weight:600;z-index:999">&#x26A0;&#xFE0F; You're offline — some features may be unavailable</div>
+<script>
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+  function _updateOnline() { document.getElementById('offlineBanner').style.display = navigator.onLine ? 'none' : ''; }
+  window.addEventListener('online', _updateOnline);
+  window.addEventListener('offline', _updateOnline);
+  _updateOnline();
+</script>
+</body>
+</html>
