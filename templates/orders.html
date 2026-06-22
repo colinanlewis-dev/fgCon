@@ -190,11 +190,8 @@
   <h1>Orders</h1>
 </header>
 
-<div style="max-width:1200px;margin:1.5rem auto;padding:0 1rem">
-  <div class="card" style="margin-bottom:0" id="eventBannerCard">
-    <h2>Active Event</h2>
-    <div id="eventBanner"></div>
-  </div>
+<div id="noEventMsg" style="display:none;max-width:1200px;margin:1.5rem auto;padding:0 1rem">
+  <div class="card"><p class="no-event">No active event. Set one active in Event Manager.</p></div>
 </div>
 
 <div class="container" id="mainContent" style="display:none">
@@ -398,17 +395,12 @@
   async function init() {
     const res = await fetch('/api/orders/init');
     const { event, menu, combos } = await res.json();
-    const banner = document.getElementById('eventBanner');
     if (!event) {
-      banner.innerHTML = '<p class="no-event">No active event. Set one active in Event Manager.</p>';
+      document.getElementById('noEventMsg').style.display = '';
       return;
     }
     selectedEventId = event.id;
     activeMenuTypeId = event.menuTypeID ?? null;
-    banner.innerHTML = `<div class="event-banner">
-      <span class="ev-name">${esc(event.eventName || 'Unnamed Event')}</span>
-      <span class="ev-date">${formatDate(event.eventDate)}${event.eventSize ? ' &mdash; ' + esc(event.eventSize) + ' guests' : ''}</span>
-    </div>`;
     document.getElementById('mainContent').style.display = '';
     onPaymentChange();
 
