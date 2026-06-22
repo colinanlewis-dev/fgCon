@@ -57,10 +57,18 @@
     .type-tile.t-drink .tile-badge, .type-tile.t-other .tile-badge { background: white; color: #374151; }
 
     /* Combo panel */
-    .combo-panel { display: flex; flex-direction: column; gap: .5rem; }
-    .combo-panel-card { background: #fafafa; border: 1.5px solid #f0f0f0; border-radius: 8px; padding: .6rem .7rem; display: flex; flex-direction: column; gap: .25rem; }
-    .combo-panel-card.has-combo { background: #f0fdf4; border-color: #86efac; }
-    .combo-panel-card .cp-name { font-size: .85rem; font-weight: 700; color: #1f2937; margin-bottom: .15rem; }
+    .combo-sides { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-bottom: .85rem; }
+    .combo-side-card { background: #fafafa; border: 1.5px solid #e5e7eb; border-radius: 8px; padding: .5rem .4rem; display: flex; flex-direction: column; align-items: center; gap: .25rem; }
+    .combo-side-card.in-cart { background: #f0fdf4; border-color: #86efac; }
+    .combo-side-icon { font-size: 1.4rem; line-height: 1; }
+    .combo-side-label { font-size: .7rem; font-weight: 700; color: #374151; text-transform: uppercase; letter-spacing: .04em; }
+    .combo-side-ctrl { display: flex; align-items: center; gap: .25rem; }
+    .combo-divider { font-size: .68rem; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: .06em; margin-bottom: .5rem; padding-bottom: .35rem; border-bottom: 1px solid #f0f0f0; }
+    .combo-main-list { display: flex; flex-direction: column; }
+    .combo-main-row { display: flex; align-items: center; justify-content: space-between; padding: .35rem 0; border-bottom: 1px solid #f5f5f5; }
+    .combo-main-row:last-child { border-bottom: none; }
+    .combo-main-name { font-size: .83rem; font-weight: 600; color: #1f2937; flex: 1; }
+    .combo-main-name.in-cart { color: #166534; }
     .combo-empty { color: #bbb; font-size: .82rem; text-align: center; padding: 1rem 0; }
 
     /* Heat Sheet quick-add */
@@ -536,70 +544,58 @@
   }
 
   function renderComboPanel() {
-    const chipItem   = menuData.find(m => m.isComboSnack && m.itemName.toLowerCase().includes('chip'));
-    const candyItem  = menuData.find(m => m.isComboSnack && m.itemName.toLowerCase().includes('candy'));
-    const drinkItem  = menuData.find(m => m.itemType === 'Drink' && (m.itemName.toLowerCase().includes('gatorade') || m.itemName.toLowerCase().includes('soda')));
-    const cheeseItem = menuData.find(m => m.itemName.toLowerCase().includes('nacho cheese'));
-    const pretzelItem = menuData.find(m => m.itemName.toLowerCase().includes('pretzel'));
-
+    const chipItem  = menuData.find(m => m.isComboSnack && m.itemName.toLowerCase().includes('chip'));
+    const candyItem = menuData.find(m => m.isComboSnack && m.itemName.toLowerCase().includes('candy'));
     const comboMains = menuData.filter(m => m.isComboMain);
     const panel = document.getElementById('comboPanel');
     if (!panel) return;
 
-    const cards = [];
+    if (!comboMains.length) {
+      panel.innerHTML = '<p class="combo-empty">No combo items available.</p>';
+      return;
+    }
 
-    // isComboMain items — standalone row + w/ Chip + w/ Candy rows
-    comboMains.forEach(m => {
-      const standaloneQty = cart[m.id] ? cart[m.id].qty : 0;
-      const price = effectivePrice(m);
-      let rows = `<div class="combo-row">
-        <span class="cr-label" style="color:#9ca3af;font-size:.7rem">$${price.toFixed(2)} alone</span>
-        <div class="cr-ctrl">
-          <button class="qty-btn" onclick="adjustQty(${m.id}, -1)">&#8722;</button>
-          <span class="qty-num">${standaloneQty}</span>
-          <button class="qty-btn" onclick="adjustQty(${m.id}, 1)">+</button>
+    // Shared sides at the top
+    const chipQty  = chipItem  ? (cart[chipItem.id]  ? cart[chipItem.id].qty  : 0) : 0;
+    const candyQty = candyItem ? (cart[candyItem.id] ? cart[candyItem.id].qty : 0) : 0;
+
+    const sidesHtml = `<div class="combo-sides">
+      ${chipItem ? `<div class="combo-side-card${chipQty > 0 ? ' in-cart' : ''}">
+        <span class="combo-side-icon">&#x1F35F;</span>
+        <span class="combo-side-label">w/ Chip</span>
+        <div class="combo-side-ctrl">
+          <button class="qty-btn" onclick="adjustQty(${chipItem.id}, -1)">&#8722;</button>
+          <span class="qty-num">${chipQty}</span>
+          <button class="qty-btn" onclick="adjustQty(${chipItem.id}, 1)">+</button>
         </div>
-      </div>`;
-      if (chipItem) {
-        const qty = Math.min(
-          cart[m.id] ? cart[m.id].qty : 0,
-          cart[chipItem.id] ? cart[chipItem.id].qty : 0,
-          drinkItem && cart[drinkItem.id] ? cart[drinkItem.id].qty : 0
-        );
-        rows += `<div class="combo-row">
-          <span class="cr-label">w/ Chip</span>
-          <div class="cr-ctrl">
-            <button class="qty-btn" onclick="adjustCombo(${m.id},${chipItem.id},${drinkItem ? drinkItem.id : 'null'},-1)">&#8722;</button>
-            <span class="qty-num">${qty}</span>
-            <button class="qty-btn" onclick="adjustCombo(${m.id},${chipItem.id},${drinkItem ? drinkItem.id : 'null'},1)">+</button>
-          </div>
-        </div>`;
-      }
-      if (candyItem) {
-        const qty = Math.min(
-          cart[m.id] ? cart[m.id].qty : 0,
-          cart[candyItem.id] ? cart[candyItem.id].qty : 0,
-          drinkItem && cart[drinkItem.id] ? cart[drinkItem.id].qty : 0
-        );
-        rows += `<div class="combo-row">
-          <span class="cr-label">w/ Candy</span>
-          <div class="cr-ctrl">
-            <button class="qty-btn" onclick="adjustCombo(${m.id},${candyItem.id},${drinkItem ? drinkItem.id : 'null'},-1)">&#8722;</button>
-            <span class="qty-num">${qty}</span>
-            <button class="qty-btn" onclick="adjustCombo(${m.id},${candyItem.id},${drinkItem ? drinkItem.id : 'null'},1)">+</button>
-          </div>
-        </div>`;
-      }
-      const hasCombo = standaloneQty > 0;
-      cards.push(`<div class="combo-panel-card${hasCombo ? ' has-combo' : ''}">
-        <div class="cp-name">${esc(m.itemName)}</div>
-        ${rows}
-      </div>`);
-    });
+      </div>` : ''}
+      ${candyItem ? `<div class="combo-side-card${candyQty > 0 ? ' in-cart' : ''}">
+        <span class="combo-side-icon">&#x1F36C;</span>
+        <span class="combo-side-label">w/ Candy</span>
+        <div class="combo-side-ctrl">
+          <button class="qty-btn" onclick="adjustQty(${candyItem.id}, -1)">&#8722;</button>
+          <span class="qty-num">${candyQty}</span>
+          <button class="qty-btn" onclick="adjustQty(${candyItem.id}, 1)">+</button>
+        </div>
+      </div>` : ''}
+    </div>`;
 
-    panel.innerHTML = cards.length
-      ? cards.join('')
-      : '<p class="combo-empty">No combo items available.</p>';
+    // Main items list
+    const mainsHtml = `
+      <div class="combo-divider">Main Item</div>
+      <div class="combo-main-list">${comboMains.map(m => {
+        const qty = cart[m.id] ? cart[m.id].qty : 0;
+        return `<div class="combo-main-row">
+          <span class="combo-main-name${qty > 0 ? ' in-cart' : ''}">${esc(m.itemName)}</span>
+          <div style="display:flex;align-items:center;gap:.25rem">
+            <button class="qty-btn" onclick="adjustQty(${m.id}, -1)">&#8722;</button>
+            <span class="qty-num">${qty}</span>
+            <button class="qty-btn" onclick="adjustQty(${m.id}, 1)">+</button>
+          </div>
+        </div>`;
+      }).join('')}</div>`;
+
+    panel.innerHTML = sidesHtml + mainsHtml;
   }
 
   function adjustCombo(mainId, sideId, drinkId, delta) {
