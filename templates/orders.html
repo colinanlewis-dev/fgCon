@@ -435,15 +435,16 @@
     const groups = {};
     menuData.forEach(m => { (groups[m.itemType] = groups[m.itemType] || []).push(m); });
 
-    // --- Tiles ---
-    const typeTiles = TYPE_ORDER.filter(t => groups[t]).map(t => {
+    // --- Tiles --- (exclude isComboMain items; those live in the left combo panel)
+    const typeTiles = TYPE_ORDER.filter(t => groups[t] && groups[t].some(m => !m.isComboMain)).map(t => {
       const cfg = TYPE_CONFIG[t];
-      const inCart = menuData.filter(m => m.itemType === t && cart[m.id]).reduce((s, m) => s + cart[m.id].qty, 0);
+      const nonComboCount = groups[t].filter(m => !m.isComboMain).length;
+      const inCart = menuData.filter(m => m.itemType === t && !m.isComboMain && cart[m.id]).reduce((s, m) => s + cart[m.id].qty, 0);
       const isActive = activeType === t;
       return `<button class="type-tile${isActive ? ' ' + cfg.cls : ''}" onclick="selectType('${t}')">
         <span class="tile-icon">${cfg.icon}</span>
         <span class="tile-name">${t}</span>
-        <span class="tile-meta">${groups[t].length} items</span>
+        <span class="tile-meta">${nonComboCount} items</span>
         ${inCart ? `<span class="tile-badge">${inCart}</span>` : ''}
       </button>`;
     });
@@ -457,7 +458,7 @@
 
     let items;
     if (groups[activeType]) {
-      items = groups[activeType];
+      items = groups[activeType].filter(m => !m.isComboMain);
     } else {
       panel.innerHTML = ''; return;
     }
@@ -547,9 +548,18 @@
 
     const cards = [];
 
-    // isComboMain items — w/ Chip and w/ Candy rows
+    // isComboMain items — standalone row + w/ Chip + w/ Candy rows
     comboMains.forEach(m => {
-      let rows = '';
+      const standaloneQty = cart[m.id] ? cart[m.id].qty : 0;
+      const price = effectivePrice(m);
+      let rows = `<div class="combo-row">
+        <span class="cr-label" style="color:#9ca3af;font-size:.7rem">$${price.toFixed(2)} alone</span>
+        <div class="cr-ctrl">
+          <button class="qty-btn" onclick="adjustQty(${m.id}, -1)">&#8722;</button>
+          <span class="qty-num">${standaloneQty}</span>
+          <button class="qty-btn" onclick="adjustQty(${m.id}, 1)">+</button>
+        </div>
+      </div>`;
       if (chipItem) {
         const qty = Math.min(
           cart[m.id] ? cart[m.id].qty : 0,
@@ -580,8 +590,7 @@
           </div>
         </div>`;
       }
-      if (!rows) return;
-      const hasCombo = (cart[m.id] && cart[m.id].qty > 0);
+      const hasCombo = standaloneQty > 0;
       cards.push(`<div class="combo-panel-card${hasCombo ? ' has-combo' : ''}">
         <div class="cp-name">${esc(m.itemName)}</div>
         ${rows}
