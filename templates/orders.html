@@ -559,8 +559,9 @@
     const totalMainQty = comboMains.reduce((s, m) => s + (cart[m.id] ? cart[m.id].qty : 0), 0);
     const chipQty  = chipItem  ? (cart[chipItem.id]  ? cart[chipItem.id].qty  : 0) : 0;
     const candyQty = candyItem ? (cart[candyItem.id] ? cart[candyItem.id].qty : 0) : 0;
-    const atChipCap  = chipQty  >= totalMainQty;
-    const atCandyCap = candyQty >= totalMainQty;
+    const totalSideQty = chipQty + candyQty;
+    const atChipCap  = totalSideQty >= totalMainQty;
+    const atCandyCap = totalSideQty >= totalMainQty;
 
     const sidesHtml = `<div class="combo-sides">
       ${chipItem ? `<div class="combo-side-card${chipQty > 0 ? ' in-cart' : ''}">
@@ -607,9 +608,10 @@
     const totalMainQty = menuData.filter(m => m.isComboMain)
       .reduce((s, m) => s + (cart[m.id] ? cart[m.id].qty : 0), 0);
 
-    // Cap: can't add more sides than total mains in cart
-    const currentQty = cart[sideId] ? cart[sideId].qty : 0;
-    if (delta > 0 && currentQty >= totalMainQty) return;
+    // Cap: combined chip + candy qty cannot exceed total mains in cart
+    const totalSideQty = menuData.filter(m => m.isComboSnack)
+      .reduce((s, m) => s + (cart[m.id] ? cart[m.id].qty : 0), 0);
+    if (delta > 0 && totalSideQty >= totalMainQty) return;
 
     [sideId, drinkItem ? drinkItem.id : null].filter(Boolean).forEach(id => {
       const item = menuData.find(m => m.id === id);
