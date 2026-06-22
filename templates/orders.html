@@ -556,26 +556,29 @@
     }
 
     // Shared sides at the top
+    const totalMainQty = comboMains.reduce((s, m) => s + (cart[m.id] ? cart[m.id].qty : 0), 0);
     const chipQty  = chipItem  ? (cart[chipItem.id]  ? cart[chipItem.id].qty  : 0) : 0;
     const candyQty = candyItem ? (cart[candyItem.id] ? cart[candyItem.id].qty : 0) : 0;
+    const atChipCap  = chipQty  >= totalMainQty;
+    const atCandyCap = candyQty >= totalMainQty;
 
     const sidesHtml = `<div class="combo-sides">
       ${chipItem ? `<div class="combo-side-card${chipQty > 0 ? ' in-cart' : ''}">
         <span class="combo-side-icon">&#x1F35F;</span>
         <span class="combo-side-label">w/ Chip</span>
         <div class="combo-side-ctrl">
-          <button class="qty-btn" onclick="adjustQty(${chipItem.id}, -1)">&#8722;</button>
+          <button class="qty-btn" onclick="adjustSide(${chipItem.id}, -1)">&#8722;</button>
           <span class="qty-num">${chipQty}</span>
-          <button class="qty-btn" onclick="adjustQty(${chipItem.id}, 1)">+</button>
+          <button class="qty-btn" onclick="adjustSide(${chipItem.id}, 1)" ${atChipCap || totalMainQty === 0 ? 'disabled style="opacity:.4;cursor:not-allowed"' : ''}>+</button>
         </div>
       </div>` : ''}
       ${candyItem ? `<div class="combo-side-card${candyQty > 0 ? ' in-cart' : ''}">
         <span class="combo-side-icon">&#x1F36C;</span>
         <span class="combo-side-label">w/ Candy</span>
         <div class="combo-side-ctrl">
-          <button class="qty-btn" onclick="adjustQty(${candyItem.id}, -1)">&#8722;</button>
+          <button class="qty-btn" onclick="adjustSide(${candyItem.id}, -1)">&#8722;</button>
           <span class="qty-num">${candyQty}</span>
-          <button class="qty-btn" onclick="adjustQty(${candyItem.id}, 1)">+</button>
+          <button class="qty-btn" onclick="adjustSide(${candyItem.id}, 1)" ${atCandyCap || totalMainQty === 0 ? 'disabled style="opacity:.4;cursor:not-allowed"' : ''}>+</button>
         </div>
       </div>` : ''}
     </div>`;
@@ -596,6 +599,28 @@
       }).join('')}</div>`;
 
     panel.innerHTML = sidesHtml + mainsHtml;
+  }
+
+  function adjustSide(sideId, delta) {
+    const drinkItem = menuData.find(m => m.itemType === 'Drink' &&
+      (m.itemName.toLowerCase().includes('gatorade') || m.itemName.toLowerCase().includes('soda')));
+    const totalMainQty = menuData.filter(m => m.isComboMain)
+      .reduce((s, m) => s + (cart[m.id] ? cart[m.id].qty : 0), 0);
+
+    // Cap: can't add more sides than total mains in cart
+    const currentQty = cart[sideId] ? cart[sideId].qty : 0;
+    if (delta > 0 && currentQty >= totalMainQty) return;
+
+    [sideId, drinkItem ? drinkItem.id : null].filter(Boolean).forEach(id => {
+      const item = menuData.find(m => m.id === id);
+      if (!item) return;
+      const next = Math.max(0, (cart[id] ? cart[id].qty : 0) + delta);
+      if (next === 0) delete cart[id];
+      else cart[id] = { name: item.itemName, price: effectivePrice(item), qty: next, type: item.itemType, isComboSnack: !!item.isComboSnack, isComboMain: false };
+    });
+    renderComboPanel();
+    renderMenu();
+    renderCart();
   }
 
   function adjustCombo(mainId, sideId, drinkId, delta) {
