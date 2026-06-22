@@ -597,26 +597,6 @@
       </div>`);
     });
 
-    // Pretzel — w/ Cheese row
-    if (pretzelItem && cheeseItem) {
-      const qty = Math.min(
-        cart[pretzelItem.id] ? cart[pretzelItem.id].qty : 0,
-        cart[cheeseItem.id] ? cart[cheeseItem.id].qty : 0
-      );
-      const hasCombo = cart[pretzelItem.id] && cart[pretzelItem.id].qty > 0;
-      cards.push(`<div class="combo-panel-card${hasCombo ? ' has-combo' : ''}">
-        <div class="cp-name">${esc(pretzelItem.itemName)}</div>
-        <div class="combo-row">
-          <span class="cr-label">w/ Cheese</span>
-          <div class="cr-ctrl">
-            <button class="qty-btn" onclick="adjustCombo(${pretzelItem.id},${cheeseItem.id},null,-1)">&#8722;</button>
-            <span class="qty-num">${qty}</span>
-            <button class="qty-btn" onclick="adjustCombo(${pretzelItem.id},${cheeseItem.id},null,1)">+</button>
-          </div>
-        </div>
-      </div>`);
-    }
-
     panel.innerHTML = cards.length
       ? cards.join('')
       : '<p class="combo-empty">No combo items available.</p>';
