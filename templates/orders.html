@@ -446,9 +446,10 @@
       panel.innerHTML = ''; return;
     }
 
-    const chipItem  = menuData.find(m => m.isComboSnack && m.itemName.toLowerCase().includes('chip'));
-    const candyItem = menuData.find(m => m.isComboSnack && m.itemName.toLowerCase().includes('candy'));
-    const drinkItem = menuData.find(m => m.itemType === 'Drink' && (m.itemName.toLowerCase().includes('gatorade') || m.itemName.toLowerCase().includes('soda')));
+    const chipItem   = menuData.find(m => m.isComboSnack && m.itemName.toLowerCase().includes('chip'));
+    const candyItem  = menuData.find(m => m.isComboSnack && m.itemName.toLowerCase().includes('candy'));
+    const drinkItem  = menuData.find(m => m.itemType === 'Drink' && (m.itemName.toLowerCase().includes('gatorade') || m.itemName.toLowerCase().includes('soda')));
+    const cheeseItem = menuData.find(m => m.itemName.toLowerCase().includes('nacho cheese'));
 
     panel.innerHTML = `<div class="item-grid">${
       items.map(m => {
@@ -459,6 +460,23 @@
           : `$${ep.toFixed(2)}`;
 
         let comboRows = '';
+
+        // Pretzel + Cheese add-on
+        if (m.itemName.toLowerCase().includes('pretzel') && cheeseItem) {
+          const cheeseQty = Math.min(
+            cart[m.id] ? cart[m.id].qty : 0,
+            cart[cheeseItem.id] ? cart[cheeseItem.id].qty : 0
+          );
+          comboRows += `<div class="combo-row">
+            <span class="cr-label">w/ Cheese</span>
+            <div class="cr-ctrl">
+              <button class="qty-btn" onclick="adjustCombo(${m.id},${cheeseItem.id},null,-1)">&#8722;</button>
+              <span class="qty-num">${cheeseQty}</span>
+              <button class="qty-btn" onclick="adjustCombo(${m.id},${cheeseItem.id},null,1)">+</button>
+            </div>
+          </div>`;
+        }
+
         if (m.isComboMain) {
           if (chipItem) {
             const chipComboQty = Math.min(
