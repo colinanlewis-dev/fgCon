@@ -127,7 +127,8 @@
     events = await res.json();
   }
 
-  function setMode(m) {
+  async function setMode(m) {
+    if (!events.length) await init();
     mode = m;
     document.getElementById('tileEvent').classList.toggle('active', m === 'event');
     document.getElementById('tileSeason').classList.toggle('active', m === 'season');
